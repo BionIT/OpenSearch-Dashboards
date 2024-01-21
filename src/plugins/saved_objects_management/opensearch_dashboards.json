@@ -10,7 +10,8 @@
     "discover",
     "home",
     "visBuilder",
-    "visAugmenter"
+    "visAugmenter",
+    "dataSource"
   ],
   "extraPublicDirs": ["public/lib"],
   "requiredBundles": ["opensearchDashboardsReact", "home"]

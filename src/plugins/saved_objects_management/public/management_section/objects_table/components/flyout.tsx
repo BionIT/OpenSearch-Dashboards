@@ -50,10 +50,13 @@ import {
   EuiCallOut,
   EuiSpacer,
   EuiLink,
+  EuiComboBox,
+  EuiCard,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
 import { OverlayStart, HttpStart } from 'src/core/public';
+import { SavedObjectsStart } from 'src/core/public';
 import {
   IndexPatternsContract,
   IIndexPattern,
@@ -78,9 +81,14 @@ import { FailedImportConflict, RetryDecision } from '../../../lib/resolve_import
 import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
+import { getDataSources } from '../components/utils';
 
 const CREATE_NEW_COPIES_DEFAULT = false;
 const OVERWRITE_ALL_DEFAULT = true;
+
+const localCluster = i18n.translate('home.dataSource.localCluster', {
+  defaultMessage: 'Local cluster',
+});
 
 export interface FlyoutProps {
   serviceRegistry: ISavedObjectsManagementServiceRegistry;
@@ -92,6 +100,8 @@ export interface FlyoutProps {
   overlays: OverlayStart;
   http: HttpStart;
   search: DataPublicPluginStart['search'];
+  dataSourceEnabled: boolean;
+  savedObjects: SavedObjectsStart;
 }
 
 export interface FlyoutState {
@@ -110,6 +120,9 @@ export interface FlyoutState {
   loadingMessage?: string;
   isLegacyFile: boolean;
   status: string;
+  selectedDataSourceId: string;
+  dataSources: any[];
+  selectedOption: any[];
 }
 
 interface ConflictingRecord {
@@ -146,11 +159,15 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       loadingMessage: undefined,
       isLegacyFile: false,
       status: 'idle',
+      selectedOption: [{ label: localCluster }],
     };
   }
 
   componentDidMount() {
     this.fetchIndexPatterns();
+    if (this.props.dataSourceEnabled) {
+      this.fetchDataSources();
+    }
   }
 
   fetchIndexPatterns = async () => {
@@ -163,6 +180,63 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
   changeImportMode = (importMode: FlyoutState['importMode']) => {
     this.setState(() => ({ importMode }));
+  };
+
+  onSelectedDataSourceChange = (e) => {
+    this.setState({ selectedOption: e });
+    const dataSourceId = e[0] ? e[0].id : undefined;
+    this.setState({ selectedDataSourceId: dataSourceId });
+  };
+
+  fetchDataSources = () => {
+    let dataSourceOptions;
+
+    getDataSources(this.props.savedObjects.client)
+      .then(async (fetchedDataSources) => {
+        dataSourceOptions = fetchedDataSources.map((dataSource) => ({
+          id: dataSource.id,
+          label: dataSource.title,
+        }));
+
+        dataSourceOptions.push({ label: localCluster });
+
+        if (dataSourceOptions.length > 0) {
+          this.setState({
+            ...this.state,
+            dataSources: dataSourceOptions,
+          });
+        }
+      })
+      .catch(() => {
+        this.setState({
+          status: 'error',
+          error: getErrorMessage(e),
+        });
+      });
+  };
+
+  renderDataSourceSelector = () => {
+    const { dataSources, selectedOption } = this.state;
+
+    return this.props.dataSourceEnabled ? (
+      <div className="importDataSourcePicker">
+        <EuiComboBox
+          aria-label={i18n.translate('savedObjectsManagement.DataSourceComboBoxAriaLabel', {
+            defaultMessage: 'Select a Destination Cluster',
+          })}
+          placeholder={i18n.translate('savedObjectsManagement.DataSourceComboBoxPlaceholder', {
+            defaultMessage: 'Select a Destination Cluster',
+          })}
+          singleSelection={{ asPlainText: true }}
+          options={dataSources}
+          selectedOptions={selectedOption}
+          onChange={this.onSelectedDataSourceChange}
+          prepend="Destination"
+          compressed
+          isDisabled={!this.props.dataSourceEnabled}
+        />
+      </div>
+    ) : null;
   };
 
   setImportFile = (files: FileList | null) => {
@@ -184,12 +258,18 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
    */
   import = async () => {
     const { http } = this.props;
-    const { file, importMode } = this.state;
+    const { file, importMode, selectedDataSourceId } = this.state;
     this.setState({ status: 'loading', error: undefined });
 
     // Import the file
     try {
-      const response = await importFile(http, file!, importMode);
+      const response = await importFile(
+        http,
+        file!,
+        importMode,
+        selectedDataSourceId,
+        this.props.dataSourceEnabled
+      );
       this.setState(processImportResponse(response), () => {
         // Resolve import errors right away if there's no index patterns to match
         // This will ask about overwriting each object, etc
@@ -251,6 +331,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
         http: this.props.http,
         state: this.state,
         getConflictResolutions: this.getConflictResolutions,
+        dataSourceId: this.state.selectedDataSourceId,
       });
       this.setState(updatedState);
     } catch (e) {
@@ -744,27 +825,44 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
     return (
       <EuiForm>
-        <EuiFormRow
-          fullWidth
-          label={
-            <FormattedMessage
-              id="savedObjectsManagement.objectsTable.flyout.selectFileToImportFormRowLabel"
-              defaultMessage="Select a file to import"
-            />
-          }
-        >
+        <EuiFormRow fullWidth>{this.renderDataSourceSelector()}</EuiFormRow>
+        <EuiSpacer />
+
+        <EuiText>
+          <h4>Choose from below options</h4>
+        </EuiText>
+
+        {/* <EuiFlexGroup>
+          <EuiFlexItem> */}
+        <EuiFormRow>
           <EuiFilePicker
             accept=".ndjson, .json"
             fullWidth
             initialPromptText={
               <FormattedMessage
                 id="savedObjectsManagement.objectsTable.flyout.importPromptText"
-                defaultMessage="Import"
+                defaultMessage="Select a file to import"
               />
             }
             onChange={this.setImportFile}
           />
         </EuiFormRow>
+        {/* </EuiFlexItem>
+          <EuiFlexItem>
+          <EuiCard
+      layout="horizontal"
+      //icon={'importAction'}
+      titleSize="xs"
+      // title={'Fetch from remote'}
+      description={'Fetch from remote'}
+      onClick={() => {console.log("hey")}}
+      href={'www.google.com'}
+      // data-test-subj={`homeSynopsisLink${id.toLowerCase()}`}
+      //betaBadgeLabel={'Beta'}
+      titleElement="h3"
+    />
+          </EuiFlexItem>
+        </EuiFlexGroup> */}
         <EuiFormRow fullWidth>
           <ImportModeControl
             initialValues={importMode}
@@ -777,7 +875,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
   }
 
   renderFooter() {
-    const { isLegacyFile, status } = this.state;
+    const { isLegacyFile, status, selectedDataSourceId } = this.state;
     const { done, close } = this.props;
 
     let confirmButton;

@@ -70,7 +70,7 @@ const createNewCopiesEnabled = {
   id: 'createNewCopiesEnabled',
   text: i18n.translate(
     'savedObjectsManagement.objectsTable.importModeControl.createNewCopies.enabledTitle',
-    { defaultMessage: 'Create new objects with random IDs' }
+    { defaultMessage: 'Create new objects' }
   ),
   tooltip: i18n.translate(
     'savedObjectsManagement.objectsTable.importModeControl.createNewCopies.enabledText',

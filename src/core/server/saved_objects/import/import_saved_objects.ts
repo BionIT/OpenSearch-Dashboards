@@ -54,6 +54,8 @@ export async function importSavedObjectsFromStream({
   savedObjectsClient,
   typeRegistry,
   namespace,
+  dataSourceId,
+  dataSourceTitle,
 }: SavedObjectsImportOptions): Promise<SavedObjectsImportResponse> {
   let errorAccumulator: SavedObjectsImportError[] = [];
   const supportedTypes = typeRegistry.getImportableAndExportableTypes().map((type) => type.name);
@@ -63,6 +65,7 @@ export async function importSavedObjectsFromStream({
     readStream,
     objectLimit,
     supportedTypes,
+    dataSourceId,
   });
   errorAccumulator = [...errorAccumulator, ...collectSavedObjectsResult.errors];
   /** Map of all IDs for objects that we are attempting to import; each value is empty by default */
@@ -78,7 +81,7 @@ export async function importSavedObjectsFromStream({
   errorAccumulator = [...errorAccumulator, ...validateReferencesResult];
 
   if (createNewCopies) {
-    importIdMap = regenerateIds(collectSavedObjectsResult.collectedObjects);
+    importIdMap = regenerateIds(collectSavedObjectsResult.collectedObjects, dataSourceId);
   } else {
     // Check single-namespace objects for conflicts in this namespace, and check multi-namespace objects for conflicts across all namespaces
     const checkConflictsParams = {
@@ -100,6 +103,7 @@ export async function importSavedObjectsFromStream({
       namespace,
       ignoreRegularConflicts: overwrite,
       importIdMap,
+      dataSourceId,
     };
     const checkOriginConflictsResult = await checkOriginConflicts(checkOriginConflictsParams);
     errorAccumulator = [...errorAccumulator, ...checkOriginConflictsResult.errors];
@@ -118,6 +122,8 @@ export async function importSavedObjectsFromStream({
     importIdMap,
     overwrite,
     namespace,
+    dataSourceId,
+    dataSourceTitle,
   };
   const createSavedObjectsResult = await createSavedObjects(createSavedObjectsParams);
   errorAccumulator = [...errorAccumulator, ...createSavedObjectsResult.errors];

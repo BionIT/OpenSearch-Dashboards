@@ -66,6 +66,7 @@ import {
   NotificationsStart,
   ApplicationStart,
 } from 'src/core/public';
+import { SavedObjectsStart } from 'src/core/public';
 import { RedirectAppLinks } from '../../../../opensearch_dashboards_react/public';
 import { IndexPatternsContract } from '../../../../data/public';
 import {
@@ -114,6 +115,8 @@ export interface SavedObjectsTableProps {
   goInspectObject: (obj: SavedObjectWithMetadata) => void;
   canGoInApp: (obj: SavedObjectWithMetadata) => boolean;
   dateFormat: string;
+  dataSourceEnabled: boolean;
+  savedObjects: SavedObjectsStart;
 }
 
 export interface SavedObjectsTableState {
@@ -558,6 +561,8 @@ export class SavedObjectsTable extends Component<SavedObjectsTableProps, SavedOb
         allowedTypes={this.props.allowedTypes}
         overlays={this.props.overlays}
         search={this.props.search}
+        dataSourceEnabled={this.props.dataSourceEnabled}
+        savedObjects={this.props.savedObjects}
       />
     );
   }

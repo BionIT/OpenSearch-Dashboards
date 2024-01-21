@@ -44,6 +44,7 @@ interface CheckConflictsParams {
   ignoreRegularConflicts?: boolean;
   retries?: SavedObjectsImportRetry[];
   createNewCopies?: boolean;
+  dataSourceId: string;
 }
 
 const isUnresolvableConflict = (error: SavedObjectError) =>
@@ -56,6 +57,7 @@ export async function checkConflicts({
   ignoreRegularConflicts,
   retries = [],
   createNewCopies,
+  dataSourceId,
 }: CheckConflictsParams) {
   const filteredObjects: Array<SavedObject<{ title?: string }>> = [];
   const errors: SavedObjectsImportError[] = [];
@@ -98,7 +100,11 @@ export async function checkConflicts({
       // This code path should not be triggered for a retry, but in case the consumer is using the import APIs incorrectly and attempting to
       // retry an object with a destinationId that would result in an unresolvable conflict, we regenerate the ID here as a fail-safe.
       const omitOriginId = createNewCopies || createNewCopy;
-      importIdMap.set(`${type}:${id}`, { id: uuidv4(), omitOriginId });
+      if (dataSourceId) {
+        importIdMap.set(`${type}:${id}`, { id: `${dataSourceId}_${uuidv4()}`, omitOriginId });
+      } else {
+        importIdMap.set(`${type}:${id}`, { id: uuidv4(), omitOriginId });
+      }
       filteredObjects.push(object);
     } else if (errorObj && errorObj.statusCode !== 409) {
       errors.push({ type, id, title, meta: { title }, error: { ...errorObj, type: 'unknown' } });
