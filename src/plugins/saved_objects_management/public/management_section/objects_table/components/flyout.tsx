@@ -82,6 +82,8 @@ import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
 import { getDataSources } from '../components/utils';
+import { fetchFromRemote } from '../../../lib/fetch_from_remote';
+const fs = require('fs');
 
 const CREATE_NEW_COPIES_DEFAULT = false;
 const OVERWRITE_ALL_DEFAULT = true;
@@ -260,6 +262,14 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
     const { http } = this.props;
     const { file, importMode, selectedDataSourceId } = this.state;
     this.setState({ status: 'loading', error: undefined });
+    //
+    // let reader = new FileReader();
+    // reader.readAsText(file);
+    //
+    // reader.onload = function() {
+    //   console.log(reader.result);  // prints file contents
+    //   console.log(reader.result.length);  // prints file contents
+    // };
 
     // Import the file
     try {
@@ -539,6 +549,29 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
     }
 
     this.setState({ status: 'success', importCount });
+  };
+
+  onRemoteFetch = async () => {
+    const { http } = this.props;
+    const { selectedDataSourceId } = this.state;
+
+    try {
+      const savedObjects = await fetchFromRemote(http, selectedDataSourceId, this.props.dataSourceEnabled);
+      const content = savedObjects.objects;
+      const blob = new Blob([content], {type: "text/plain"})
+      const file = new File([blob], 'temp.ndjson', {type: 'application/x-ndjson'});
+      this.setState({
+        file,
+        isLegacyFile: /\.json$/i.test(file.name) || file.type === 'application/json',
+      });
+    } catch (e) {
+      this.setState({
+        status: 'error',
+        error: getErrorMessage(e),
+        loadingMessage: undefined,
+      });
+      return;
+    }
   };
 
   onIndexChanged = (id: string, e: any) => {
@@ -832,37 +865,36 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
           <h4>Choose from below options</h4>
         </EuiText>
 
-        {/* <EuiFlexGroup>
-          <EuiFlexItem> */}
-        <EuiFormRow>
-          <EuiFilePicker
-            accept=".ndjson, .json"
-            fullWidth
-            initialPromptText={
-              <FormattedMessage
-                id="savedObjectsManagement.objectsTable.flyout.importPromptText"
-                defaultMessage="Select a file to import"
-              />
-            }
-            onChange={this.setImportFile}
-          />
-        </EuiFormRow>
-        {/* </EuiFlexItem>
+        <EuiFlexGroup>
           <EuiFlexItem>
-          <EuiCard
-      layout="horizontal"
-      //icon={'importAction'}
-      titleSize="xs"
-      // title={'Fetch from remote'}
-      description={'Fetch from remote'}
-      onClick={() => {console.log("hey")}}
-      href={'www.google.com'}
-      // data-test-subj={`homeSynopsisLink${id.toLowerCase()}`}
-      //betaBadgeLabel={'Beta'}
-      titleElement="h3"
-    />
+            <EuiFormRow>
+              <EuiFilePicker
+                accept=".ndjson, .json"
+                fullWidth
+                initialPromptText={
+                  <FormattedMessage
+                    id="savedObjectsManagement.objectsTable.flyout.importPromptText"
+                    defaultMessage="Select a file to import"
+                  />
+                }
+                onChange={this.setImportFile}
+              />
+            </EuiFormRow>
           </EuiFlexItem>
-        </EuiFlexGroup> */}
+          <EuiFlexItem>
+            <EuiCard
+              layout="horizontal"
+              // icon={'importAction'}
+              titleSize="xs"
+              // title={'Fetch from remote'}
+              description={'Fetch from remote'}
+              onClick={this.onRemoteFetch}
+              // data-test-subj={`homeSynopsisLink${id.toLowerCase()}`}
+              // betaBadgeLabel={'Beta'}
+              titleElement="h3"
+            />
+          </EuiFlexItem>
+        </EuiFlexGroup>
         <EuiFormRow fullWidth>
           <ImportModeControl
             initialValues={importMode}
