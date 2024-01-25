@@ -77,6 +77,7 @@ export const registerImportRoute = (router: IRouter, config: SavedObjectConfig) 
     },
     router.handleLegacyErrors(async (context, req, res) => {
       const { overwrite, createNewCopies, dataSourceId } = req.query;
+      console.log(dataSourceId)
       const file = req.body.file as FileStream;
       const fileExtension = extname(file.hapi.filename).toLowerCase();
       if (fileExtension !== '.ndjson') {
