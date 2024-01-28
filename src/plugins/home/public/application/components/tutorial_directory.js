@@ -34,7 +34,7 @@ import PropTypes from 'prop-types';
 import { Synopsis } from './synopsis';
 import { SampleDataSetCards } from './sample_data_set_cards';
 import { getServices } from '../opensearch_dashboards_services';
-
+// eslint-disable-next-line @osd/eslint/no-restricted-paths
 import { DataSourcePicker } from '../../../../data_source_management/public/components/data_source_picker/data_source_picker';
 
 import {
