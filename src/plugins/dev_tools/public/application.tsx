@@ -43,7 +43,6 @@ import {
   SavedObjectsStart,
   ScopedHistory,
 } from 'src/core/public';
-
 // eslint-disable-next-line @osd/eslint/no-restricted-paths
 import { DataSourcePicker } from '../../data_source_management/public/components/data_source_picker/data_source_picker';
 import { DevToolApp } from './dev_tool';
