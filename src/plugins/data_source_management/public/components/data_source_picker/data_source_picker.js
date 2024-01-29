@@ -40,6 +40,8 @@ export class DataSourcePicker extends React.Component {
           }));
 
           dataSourceOptions.push(LocalCluster);
+
+          if (!this._isMounted) return;
           this.setState({
             ...this.state,
             dataSources: dataSourceOptions,
@@ -56,6 +58,7 @@ export class DataSourcePicker extends React.Component {
   }
 
   onChang(e) {
+    if (!this._isMounted) return;
     this.setState({
       selectedOption: e,
     });
