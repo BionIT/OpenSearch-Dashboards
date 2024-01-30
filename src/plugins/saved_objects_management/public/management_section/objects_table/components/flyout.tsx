@@ -52,6 +52,8 @@ import {
   EuiLink,
   EuiComboBox,
   EuiCard,
+  EuiHorizontalRule,
+  EuiPopover,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
@@ -88,7 +90,7 @@ const fs = require('fs');
 const CREATE_NEW_COPIES_DEFAULT = false;
 const OVERWRITE_ALL_DEFAULT = true;
 
-const localCluster = i18n.translate('home.dataSource.localCluster', {
+const localCluster = i18n.translate('dataSource.localCluster', {
   defaultMessage: 'Local cluster',
 });
 
@@ -220,20 +222,30 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
   renderDataSourceSelector = () => {
     const { dataSources, selectedOption } = this.state;
 
+    const button = (
+      <EuiButtonEmpty iconType="documentation" iconSide="right" onClick={() => console.log('hey')}>
+        Data sources are xxx
+      </EuiButtonEmpty>
+    );
+
     return this.props.dataSourceEnabled ? (
       <div className="importDataSourcePicker">
+        <EuiPopover button={button} isOpen={true} closePopover={false}>
+          <EuiText style={{ width: 300 }}>
+            <p>Select data source</p>
+          </EuiText>
+        </EuiPopover>
         <EuiComboBox
           aria-label={i18n.translate('savedObjectsManagement.DataSourceComboBoxAriaLabel', {
-            defaultMessage: 'Select a Destination Cluster',
+            defaultMessage: 'Select a data source',
           })}
           placeholder={i18n.translate('savedObjectsManagement.DataSourceComboBoxPlaceholder', {
-            defaultMessage: 'Select a Destination Cluster',
+            defaultMessage: 'Select a data source',
           })}
           singleSelection={{ asPlainText: true }}
           options={dataSources}
           selectedOptions={selectedOption}
           onChange={this.onSelectedDataSourceChange}
-          prepend="Destination"
           compressed
           isDisabled={!this.props.dataSourceEnabled}
         />
@@ -556,10 +568,14 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
     const { selectedDataSourceId } = this.state;
 
     try {
-      const savedObjects = await fetchFromRemote(http, selectedDataSourceId, this.props.dataSourceEnabled);
+      const savedObjects = await fetchFromRemote(
+        http,
+        selectedDataSourceId,
+        this.props.dataSourceEnabled
+      );
       const content = savedObjects.objects;
-      const blob = new Blob([content], {type: "text/plain"})
-      const file = new File([blob], 'temp.ndjson', {type: 'application/x-ndjson'});
+      const blob = new Blob([content], { type: 'text/plain' });
+      const file = new File([blob], 'temp.ndjson', { type: 'application/x-ndjson' });
       this.setState({
         file,
         isLegacyFile: /\.json$/i.test(file.name) || file.type === 'application/json',
@@ -858,9 +874,6 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
     return (
       <EuiForm>
-        <EuiFormRow fullWidth>{this.renderDataSourceSelector()}</EuiFormRow>
-        <EuiSpacer />
-
         <EuiText>
           <h4>Choose from below options</h4>
         </EuiText>
@@ -895,6 +908,11 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
             />
           </EuiFlexItem>
         </EuiFlexGroup>
+
+        <EuiHorizontalRule />
+        <EuiSpacer />
+        <EuiFormRow fullWidth>{this.renderDataSourceSelector()}</EuiFormRow>
+        <EuiSpacer />
         <EuiFormRow fullWidth>
           <ImportModeControl
             initialValues={importMode}
