@@ -79,6 +79,7 @@ import { FailedImportConflict, RetryDecision } from '../../../lib/resolve_import
 import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
+// eslint-disable-next-line @osd/eslint/no-restricted-paths
 import { DataSourcePicker } from '../../../../../data_source_management/public/components/data_source_picker/data_source_picker.js';
 
 const CREATE_NEW_COPIES_DEFAULT = true;

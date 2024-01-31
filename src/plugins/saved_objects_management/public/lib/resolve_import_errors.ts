@@ -90,7 +90,7 @@ async function callResolveImportErrorsApi(
   file: File,
   retries: any,
   createNewCopies: boolean,
-  selectedDataSourceId?: string,
+  selectedDataSourceId?: string
 ): Promise<SavedObjectsImportResponse> {
   const formData = new FormData();
   formData.append('file', file);
@@ -270,7 +270,13 @@ export async function resolveImportErrors({
     }
 
     // Call API
-    const response = await callResolveImportErrorsApi(http, file!, retries, createNewCopies, selectedDataSourceId);
+    const response = await callResolveImportErrorsApi(
+      http,
+      file!,
+      retries,
+      createNewCopies,
+      selectedDataSourceId
+    );
     importCount = response.successCount; // reset the success count since we retry all successful results each time
     failedImports = [];
     for (const { error, ...obj } of response.errors || []) {
