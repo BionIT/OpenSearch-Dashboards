@@ -50,10 +50,11 @@ import {
   EuiCallOut,
   EuiSpacer,
   EuiLink,
+  EuiFormFieldset,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
-import { OverlayStart, HttpStart } from 'src/core/public';
+import { OverlayStart, HttpStart, SavedObjectsStart } from 'src/core/public';
 import {
   IndexPatternsContract,
   IIndexPattern,
@@ -78,8 +79,9 @@ import { FailedImportConflict, RetryDecision } from '../../../lib/resolve_import
 import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
+import { DataSourcePicker } from '../../../../../data_source_management/public/components/data_source_picker/data_source_picker.js';
 
-const CREATE_NEW_COPIES_DEFAULT = false;
+const CREATE_NEW_COPIES_DEFAULT = true;
 const OVERWRITE_ALL_DEFAULT = true;
 
 export interface FlyoutProps {
@@ -92,6 +94,9 @@ export interface FlyoutProps {
   overlays: OverlayStart;
   http: HttpStart;
   search: DataPublicPluginStart['search'];
+  dataSourceEnabled: boolean;
+  savedObjects: SavedObjectsClientContract;
+  notifications: NotificationsStart;
 }
 
 export interface FlyoutState {
@@ -110,6 +115,7 @@ export interface FlyoutState {
   loadingMessage?: string;
   isLegacyFile: boolean;
   status: string;
+  selectedDataSourceId: string;
 }
 
 interface ConflictingRecord {
@@ -184,12 +190,12 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
    */
   import = async () => {
     const { http } = this.props;
-    const { file, importMode } = this.state;
+    const { file, importMode, selectedDataSourceId } = this.state;
     this.setState({ status: 'loading', error: undefined });
 
     // Import the file
     try {
-      const response = await importFile(http, file!, importMode);
+      const response = await importFile(http, file!, importMode, selectedDataSourceId);
       this.setState(processImportResponse(response), () => {
         // Resolve import errors right away if there's no index patterns to match
         // This will ask about overwriting each object, etc
@@ -251,6 +257,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
         http: this.props.http,
         state: this.state,
         getConflictResolutions: this.getConflictResolutions,
+        selectedDataSourceId: this.state.selectedDataSourceId,
       });
       this.setState(updatedState);
     } catch (e) {
@@ -618,6 +625,8 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       importMode,
     } = this.state;
 
+    const { dataSourceEnabled } = this.props;
+
     if (status === 'loading') {
       return (
         <EuiFlexGroup justifyContent="spaceAround">
@@ -749,7 +758,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
           label={
             <FormattedMessage
               id="savedObjectsManagement.objectsTable.flyout.selectFileToImportFormRowLabel"
-              defaultMessage="Select a file to import"
+              defaultMessage="Select file"
             />
           }
         >
@@ -765,14 +774,63 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
             onChange={this.setImportFile}
           />
         </EuiFormRow>
+
+        {(dataSourceEnabled && this.renderImportControlForDataSource(importMode, isLegacyFile)) || (
+          <EuiFormRow fullWidth>
+            <ImportModeControl
+              initialValues={importMode}
+              isLegacyFile={isLegacyFile}
+              updateSelection={(newValues: ImportMode) => this.changeImportMode(newValues)}
+              optionLabel={i18n.translate(
+                'savedObjectsManagement.objectsTable.importModeControl.importOptionsTitle',
+                { defaultMessage: 'Import options' }
+              )}
+            />
+          </EuiFormRow>
+        )}
+      </EuiForm>
+    );
+  }
+
+  onSelectedDataSourceChange = (e) => {
+    const dataSourceId = e[0] ? e[0].id : undefined;
+    this.setState({ selectedDataSourceId: dataSourceId });
+  };
+
+  renderImportControlForDataSource(importMode, isLegacyFile) {
+    return (
+      <div className="savedObjectImportControl">
+        <EuiSpacer />
+        <EuiFormFieldset
+          legend={{
+            children: (
+              <EuiTitle size="xs">
+                <span>Import options</span>
+              </EuiTitle>
+            ),
+          }}
+        >
+          <DataSourcePicker
+            savedObjectsClient={this.props.savedObjects}
+            notifications={this.props.notifications.toasts}
+            onSelectedDataSource={this.onSelectedDataSourceChange}
+            disabled={!this.props.dataSourceEnabled}
+            fullWidth={true}
+          />
+        </EuiFormFieldset>
+        <EuiSpacer />
         <EuiFormRow fullWidth>
           <ImportModeControl
             initialValues={importMode}
             isLegacyFile={isLegacyFile}
             updateSelection={(newValues: ImportMode) => this.changeImportMode(newValues)}
+            optionLabel={i18n.translate(
+              'savedObjectsManagement.objectsTable.importModeControl.importOptionsTitle',
+              { defaultMessage: 'Conflict management' }
+            )}
           />
         </EuiFormRow>
-      </EuiForm>
+      </div>
     );
   }
 

@@ -46,6 +46,7 @@ export interface ImportModeControlProps {
   initialValues: ImportMode;
   isLegacyFile: boolean;
   updateSelection: (result: ImportMode) => void;
+  optionLabel: string;
 }
 
 export interface ImportMode {
@@ -70,7 +71,7 @@ const createNewCopiesEnabled = {
   id: 'createNewCopiesEnabled',
   text: i18n.translate(
     'savedObjectsManagement.objectsTable.importModeControl.createNewCopies.enabledTitle',
-    { defaultMessage: 'Create new objects with random IDs' }
+    { defaultMessage: 'Create new objects with unique IDs' }
   ),
   tooltip: i18n.translate(
     'savedObjectsManagement.objectsTable.importModeControl.createNewCopies.enabledText',
@@ -93,10 +94,6 @@ const overwriteDisabled = {
     { defaultMessage: 'Request action on conflict' }
   ),
 };
-const importOptionsTitle = i18n.translate(
-  'savedObjectsManagement.objectsTable.importModeControl.importOptionsTitle',
-  { defaultMessage: 'Import options' }
-);
 
 const createLabel = ({ text, tooltip }: { text: string; tooltip: string }) => (
   <EuiFlexGroup>
@@ -113,6 +110,7 @@ export const ImportModeControl = ({
   initialValues,
   isLegacyFile,
   updateSelection,
+  optionLabel,
 }: ImportModeControlProps) => {
   const [createNewCopies, setCreateNewCopies] = useState(initialValues.createNewCopies);
   const [overwrite, setOverwrite] = useState(initialValues.overwrite);
@@ -145,11 +143,20 @@ export const ImportModeControl = ({
       legend={{
         children: (
           <EuiTitle size="xs">
-            <span>{importOptionsTitle}</span>
+            <span>{optionLabel}</span>
           </EuiTitle>
         ),
       }}
     >
+      <EuiCheckableCard
+        id={createNewCopiesEnabled.id}
+        label={createLabel(createNewCopiesEnabled)}
+        checked={createNewCopies}
+        onChange={() => onChange({ createNewCopies: true })}
+      />
+
+      <EuiSpacer size="s" />
+
       <EuiCheckableCard
         id={createNewCopiesDisabled.id}
         label={createLabel(createNewCopiesDisabled)}
@@ -158,15 +165,6 @@ export const ImportModeControl = ({
       >
         {overwriteRadio}
       </EuiCheckableCard>
-
-      <EuiSpacer size="s" />
-
-      <EuiCheckableCard
-        id={createNewCopiesEnabled.id}
-        label={createLabel(createNewCopiesEnabled)}
-        checked={createNewCopies}
-        onChange={() => onChange({ createNewCopies: true })}
-      />
     </EuiFormFieldset>
   );
 };
