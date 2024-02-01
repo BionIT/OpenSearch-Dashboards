@@ -106,6 +106,18 @@ const createLabel = ({ text, tooltip }: { text: string; tooltip: string }) => (
   </EuiFlexGroup>
 );
 
+const overwriteRadio = (disabled: boolean, overwrite: boolean, onChange) => {
+  return (
+    <EuiRadioGroup
+      options={[overwriteEnabled, overwriteDisabled]}
+      idSelected={overwrite ? overwriteEnabled.id : overwriteDisabled.id}
+      onChange={(id: string) => onChange({ overwrite: id === overwriteEnabled.id })}
+      disabled={disabled}
+      data-test-subj={'savedObjectsManagement-importModeControl-overwriteRadioGroup'}
+    />
+  );
+};
+
 export const ImportModeControl = ({
   initialValues,
   isLegacyFile,
@@ -124,18 +136,8 @@ export const ImportModeControl = ({
     updateSelection({ createNewCopies, overwrite, ...partial });
   };
 
-  const overwriteRadio = (
-    <EuiRadioGroup
-      options={[overwriteEnabled, overwriteDisabled]}
-      idSelected={overwrite ? overwriteEnabled.id : overwriteDisabled.id}
-      onChange={(id: string) => onChange({ overwrite: id === overwriteEnabled.id })}
-      disabled={createNewCopies}
-      data-test-subj={'savedObjectsManagement-importModeControl-overwriteRadioGroup'}
-    />
-  );
-
   if (isLegacyFile) {
-    return overwriteRadio;
+    return overwriteRadio(false, false, onChange);
   }
 
   return (
@@ -165,7 +167,7 @@ export const ImportModeControl = ({
         onChange={() => onChange({ createNewCopies: false })}
         data-test-subj={'savedObjectsManagement-importModeControl-createNewCopiesDisabled'}
       >
-        {overwriteRadio}
+        {overwriteRadio(createNewCopies, overwrite, onChange)}
       </EuiCheckableCard>
     </EuiFormFieldset>
   );
