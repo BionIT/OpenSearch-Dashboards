@@ -54,6 +54,7 @@ import {
   EuiCard,
   EuiHorizontalRule,
   EuiPopover,
+  EuiFormLabel,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
@@ -874,27 +875,9 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
     return (
       <EuiForm>
-        <EuiText>
-          <h4>Choose from below options</h4>
-        </EuiText>
-
         <EuiFlexGroup>
           <EuiFlexItem>
             <EuiFormRow>
-              <EuiFilePicker
-                accept=".ndjson, .json"
-                fullWidth
-                initialPromptText={
-                  <FormattedMessage
-                    id="savedObjectsManagement.objectsTable.flyout.importPromptText"
-                    defaultMessage="Select a file to import"
-                  />
-                }
-                onChange={this.setImportFile}
-              />
-            </EuiFormRow>
-          </EuiFlexItem>
-          <EuiFlexItem>
             <EuiCard
               layout="horizontal"
               // icon={'importAction'}
@@ -906,6 +889,21 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
               // betaBadgeLabel={'Beta'}
               titleElement="h3"
             />
+              
+            </EuiFormRow>
+          </EuiFlexItem>
+          <EuiFlexItem>
+          <EuiFilePicker
+                accept=".ndjson, .json"
+                fullWidth
+                initialPromptText={
+                  <FormattedMessage
+                    id="savedObjectsManagement.objectsTable.flyout.importPromptText"
+                    defaultMessage="Select a file to import"
+                  />
+                }
+                onChange={this.setImportFile}
+              />
           </EuiFlexItem>
         </EuiFlexGroup>
 
