@@ -86,6 +86,7 @@ import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
 import { getDataSources } from '../components/utils';
 import { fetchFromRemote } from '../../../lib/fetch_from_remote';
+import { DataSourcePicker } from '../../../../../data_source_management/public/components/data_source_picker/data_source_picker.js';
 const fs = require('fs');
 
 const CREATE_NEW_COPIES_DEFAULT = false;
@@ -878,17 +879,12 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
         <EuiFlexGroup>
           <EuiFlexItem>
             <EuiFormRow>
-            <EuiCard
-              layout="horizontal"
-              // icon={'importAction'}
-              titleSize="xs"
-              // title={'Fetch from remote'}
-              description={'Fetch from remote'}
-              onClick={this.onRemoteFetch}
-              // data-test-subj={`homeSynopsisLink${id.toLowerCase()}`}
-              // betaBadgeLabel={'Beta'}
-              titleElement="h3"
-            />
+            <EuiCheckableCard
+            id={'bla'}
+            label={'Fetch from remote'}
+            checked={false}
+            onChange={() => console.log('bla')}
+          />
               
             </EuiFormRow>
           </EuiFlexItem>
@@ -920,6 +916,19 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
         </EuiFormRow>
       </EuiForm>
     );
+  }
+
+  renderFetchFromRemote() {
+    return (
+      <EuiTitle>Remote cluster</EuiTitle>
+      <DataSourcePicker
+      savedObjectsClient={savedObjects.client}
+      notifications={toasts}
+      onSelectedDataSource={onChange}
+      disabled={!dataSourceEnabled}
+    />
+    <EuiTitle>Select tenant</EuiTitle>
+    )
   }
 
   renderFooter() {
