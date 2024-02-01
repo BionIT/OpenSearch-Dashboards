@@ -137,7 +137,7 @@ export const ImportModeControl = ({
   };
 
   if (isLegacyFile) {
-    return overwriteRadio(false, false, onChange);
+    return overwriteRadio(false, overwrite, onChange);
   }
 
   return (
