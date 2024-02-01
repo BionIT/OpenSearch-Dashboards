@@ -57,9 +57,19 @@ export function SavedObjectsPageProvider({ getService, getPageObjects }: FtrProv
       await testSubjects.click('importObjects');
       await PageObjects.common.setFileInputPath(path);
 
+      const selectedInput = await find.byXPath("//div[input[@id='createNewCopiesDisabled']]");
+      await selectedInput.click();
+
+      const myradio = await testSubjects.find(
+        'savedObjectsManagement-importModeControl-overwriteRadioGroup'
+      );
+
+      const mydiv = await myradio.findByXpath("//div[input[@id='overwriteDisabled']]");
+      await mydiv.click();
+
       if (!overwriteAll) {
         log.debug(`Toggling overwriteAll`);
-        
+
         const radio = await testSubjects.find(
           'savedObjectsManagement-importModeControl-overwriteRadioGroup'
         );
