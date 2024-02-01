@@ -82,7 +82,7 @@ import { ImportSummary } from './import_summary';
 // eslint-disable-next-line @osd/eslint/no-restricted-paths
 import { DataSourcePicker } from '../../../../../data_source_management/public/components/data_source_picker/data_source_picker.js';
 
-const CREATE_NEW_COPIES_DEFAULT = true;
+const CREATE_NEW_COPIES_DEFAULT = false;
 const OVERWRITE_ALL_DEFAULT = true;
 
 export interface FlyoutProps {

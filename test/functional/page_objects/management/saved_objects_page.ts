@@ -59,9 +59,7 @@ export function SavedObjectsPageProvider({ getService, getPageObjects }: FtrProv
 
       if (!overwriteAll) {
         log.debug(`Toggling overwriteAll`);
-        await testSubjects.click(
-          'savedObjectsManagement-importModeControl-createNewCopiesDisabled'
-        );
+        
         const radio = await testSubjects.find(
           'savedObjectsManagement-importModeControl-overwriteRadioGroup'
         );
