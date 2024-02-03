@@ -89,17 +89,17 @@ export class ClusterSelector extends React.Component<ClusterSelectorProps, Clust
   render() {
     return (
       <EuiComboBox
-        aria-label={i18n.translate('dataSourceComboBoxAriaLabel', {
+        aria-label={i18n.translate('clusterSelectorComboBoxAriaLabel', {
           defaultMessage: 'Select a data source',
         })}
-        placeholder={i18n.translate('dataSourceComboBoxPlaceholder', {
+        placeholder={i18n.translate('clusterSelectorComboBoxPlaceholder', {
           defaultMessage: 'Select a data source',
         })}
         singleSelection={{ asPlainText: true }}
         options={this.state.clusterOptions}
         selectedOptions={this.state.selectedOption}
         onChange={(e) => this.onChange(e)}
-        prepend={i18n.translate('dataSourceComboBoxPrepend', {
+        prepend={i18n.translate('clusterSelectorComboBoxPrepend', {
           defaultMessage: 'Data source',
         })}
         compressed
