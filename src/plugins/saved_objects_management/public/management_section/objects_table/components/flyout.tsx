@@ -55,7 +55,7 @@ import {
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
 import { OverlayStart, HttpStart } from 'src/core/public';
-import { ClusterSelector } from 'src/plugins/data_source_management/public';
+import { ClusterSelector } from '../../../../../data_source_management/public';
 import {
   IndexPatternsContract,
   IIndexPattern,

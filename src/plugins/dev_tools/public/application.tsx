@@ -44,7 +44,7 @@ import {
   ScopedHistory,
 } from 'src/core/public';
 
-import { ClusterSelector } from 'src/plugins/data_source_management/public';
+import { ClusterSelector } from '../../data_source_management/public';
 import { DevToolApp } from './dev_tool';
 import { DevToolsSetupDependencies } from './plugin';
 import { addHelpMenuToAppChrome } from './utils/util';
