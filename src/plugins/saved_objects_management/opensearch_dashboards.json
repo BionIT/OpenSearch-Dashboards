@@ -14,5 +14,5 @@
     "dataSource"
   ],
   "extraPublicDirs": ["public/lib"],
-  "requiredBundles": ["opensearchDashboardsReact", "home", "dataSourceManagement"]
+  "requiredBundles": ["opensearchDashboardsReact", "home"]
 }
