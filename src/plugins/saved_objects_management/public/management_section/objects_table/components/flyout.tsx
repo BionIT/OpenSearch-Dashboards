@@ -50,16 +50,12 @@ import {
   EuiCallOut,
   EuiSpacer,
   EuiLink,
-  EuiComboBox,
-  EuiCard,
-  EuiHorizontalRule,
-  EuiPopover,
-  EuiFormLabel,
+  EuiFormFieldset,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
 import { OverlayStart, HttpStart } from 'src/core/public';
-import { SavedObjectsStart } from 'src/core/public';
+import { ClusterSelector } from '../../../../../data_source_management/public';
 import {
   IndexPatternsContract,
   IIndexPattern,
@@ -84,12 +80,7 @@ import { FailedImportConflict, RetryDecision } from '../../../lib/resolve_import
 import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
-import { getDataSources } from '../components/utils';
-import { fetchFromRemote } from '../../../lib/fetch_from_remote';
-import { DataSourcePicker } from '../../../../../data_source_management/public/components/data_source_picker/data_source_picker.js';
-const fs = require('fs');
-
-const CREATE_NEW_COPIES_DEFAULT = false;
+const CREATE_NEW_COPIES_DEFAULT = true;
 const OVERWRITE_ALL_DEFAULT = true;
 
 const localCluster = i18n.translate('dataSource.localCluster', {
@@ -107,7 +98,8 @@ export interface FlyoutProps {
   http: HttpStart;
   search: DataPublicPluginStart['search'];
   dataSourceEnabled: boolean;
-  savedObjects: SavedObjectsStart;
+  savedObjects: SavedObjectsClientContract;
+  notifications: NotificationsStart;
 }
 
 export interface FlyoutState {
@@ -127,8 +119,6 @@ export interface FlyoutState {
   isLegacyFile: boolean;
   status: string;
   selectedDataSourceId: string;
-  dataSources: any[];
-  selectedOption: any[];
 }
 
 interface ConflictingRecord {
@@ -165,15 +155,12 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       loadingMessage: undefined,
       isLegacyFile: false,
       status: 'idle',
-      selectedOption: [{ label: localCluster }],
+      selectedDataSourceId: '',
     };
   }
 
   componentDidMount() {
     this.fetchIndexPatterns();
-    if (this.props.dataSourceEnabled) {
-      this.fetchDataSources();
-    }
   }
 
   fetchIndexPatterns = async () => {
@@ -186,73 +173,6 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
   changeImportMode = (importMode: FlyoutState['importMode']) => {
     this.setState(() => ({ importMode }));
-  };
-
-  onSelectedDataSourceChange = (e) => {
-    this.setState({ selectedOption: e });
-    const dataSourceId = e[0] ? e[0].id : undefined;
-    this.setState({ selectedDataSourceId: dataSourceId });
-  };
-
-  fetchDataSources = () => {
-    let dataSourceOptions;
-
-    getDataSources(this.props.savedObjects.client)
-      .then(async (fetchedDataSources) => {
-        dataSourceOptions = fetchedDataSources.map((dataSource) => ({
-          id: dataSource.id,
-          label: dataSource.title,
-        }));
-
-        dataSourceOptions.push({ label: localCluster });
-
-        if (dataSourceOptions.length > 0) {
-          this.setState({
-            ...this.state,
-            dataSources: dataSourceOptions,
-          });
-        }
-      })
-      .catch(() => {
-        this.setState({
-          status: 'error',
-          error: getErrorMessage(e),
-        });
-      });
-  };
-
-  renderDataSourceSelector = () => {
-    const { dataSources, selectedOption } = this.state;
-
-    const button = (
-      <EuiButtonEmpty iconType="documentation" iconSide="right" onClick={() => console.log('hey')}>
-        Data sources are xxx
-      </EuiButtonEmpty>
-    );
-
-    return this.props.dataSourceEnabled ? (
-      <div className="importDataSourcePicker">
-        <EuiPopover button={button} isOpen={true} closePopover={false}>
-          <EuiText style={{ width: 300 }}>
-            <p>Select data source</p>
-          </EuiText>
-        </EuiPopover>
-        <EuiComboBox
-          aria-label={i18n.translate('savedObjectsManagement.DataSourceComboBoxAriaLabel', {
-            defaultMessage: 'Select a data source',
-          })}
-          placeholder={i18n.translate('savedObjectsManagement.DataSourceComboBoxPlaceholder', {
-            defaultMessage: 'Select a data source',
-          })}
-          singleSelection={{ asPlainText: true }}
-          options={dataSources}
-          selectedOptions={selectedOption}
-          onChange={this.onSelectedDataSourceChange}
-          compressed
-          isDisabled={!this.props.dataSourceEnabled}
-        />
-      </div>
-    ) : null;
   };
 
   setImportFile = (files: FileList | null) => {
@@ -287,13 +207,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
     // Import the file
     try {
-      const response = await importFile(
-        http,
-        file!,
-        importMode,
-        selectedDataSourceId,
-        this.props.dataSourceEnabled
-      );
+      const response = await importFile(http, file!, importMode, selectedDataSourceId);
       this.setState(processImportResponse(response), () => {
         // Resolve import errors right away if there's no index patterns to match
         // This will ask about overwriting each object, etc
@@ -355,7 +269,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
         http: this.props.http,
         state: this.state,
         getConflictResolutions: this.getConflictResolutions,
-        dataSourceId: this.state.selectedDataSourceId,
+        selectedDataSourceId: this.state.selectedDataSourceId,
       });
       this.setState(updatedState);
     } catch (e) {
@@ -750,6 +664,8 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       importMode,
     } = this.state;
 
+    const { dataSourceEnabled } = this.props;
+
     if (status === 'loading') {
       return (
         <EuiFlexGroup justifyContent="spaceAround">
@@ -876,59 +792,108 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
 
     return (
       <EuiForm>
-        <EuiFlexGroup>
-          <EuiFlexItem>
-            <EuiFormRow>
-            <EuiCheckableCard
-            id={'bla'}
-            label={'Fetch from remote'}
-            checked={false}
-            onChange={() => console.log('bla')}
-          />
-              
-            </EuiFormRow>
-          </EuiFlexItem>
-          <EuiFlexItem>
+        <EuiFormRow
+          fullWidth
+          label={
+            <FormattedMessage
+              id="savedObjectsManagement.objectsTable.flyout.selectFileToImportFormRowLabel"
+              defaultMessage="Select file"
+            />
+          }
+        >
           <EuiFilePicker
-                accept=".ndjson, .json"
-                fullWidth
-                initialPromptText={
-                  <FormattedMessage
-                    id="savedObjectsManagement.objectsTable.flyout.importPromptText"
-                    defaultMessage="Select a file to import"
-                  />
-                }
-                onChange={this.setImportFile}
+            accept=".ndjson, .json"
+            fullWidth
+            initialPromptText={
+              <FormattedMessage
+                id="savedObjectsManagement.objectsTable.flyout.importPromptText"
+                defaultMessage="Import"
               />
-          </EuiFlexItem>
-        </EuiFlexGroup>
+            }
+            onChange={this.setImportFile}
+          />
+        </EuiFormRow>
 
-        <EuiHorizontalRule />
+        {this.renderImportControl(importMode, isLegacyFile, dataSourceEnabled)}
+      </EuiForm>
+    );
+  }
+
+  onSelectedDataSourceChange = (e) => {
+    const dataSourceId = e[0] ? e[0].id : undefined;
+    this.setState({ selectedDataSourceId: dataSourceId });
+  };
+
+  renderImportControl(importMode: ImportMode, isLegacyFile: boolean, dataSourceEnabled: boolean) {
+    if (dataSourceEnabled) {
+      return this.renderImportControlForDataSource(importMode, isLegacyFile);
+    }
+    return (
+      <EuiFormRow fullWidth>
+        <ImportModeControl
+          initialValues={importMode}
+          isLegacyFile={isLegacyFile}
+          updateSelection={(newValues: ImportMode) => this.changeImportMode(newValues)}
+          optionLabel={i18n.translate(
+            'savedObjectsManagement.objectsTable.importModeControl.importOptionsTitle',
+            { defaultMessage: 'Import options' }
+          )}
+        />
+      </EuiFormRow>
+    );
+  }
+
+  renderImportControlForDataSource(importMode: ImportMode, isLegacyFile: boolean) {
+    return (
+      <div className="savedObjectImportControlForDataSource">
         <EuiSpacer />
-        <EuiFormRow fullWidth>{this.renderDataSourceSelector()}</EuiFormRow>
+        <EuiFormFieldset
+          legend={{
+            children: (
+              <EuiTitle size="xs">
+                <span>Import options</span>
+              </EuiTitle>
+            ),
+          }}
+        >
+          <ClusterSelector
+            savedObjectsClient={this.props.savedObjects}
+            notifications={this.props.notifications.toasts}
+            onSelectedDataSource={this.onSelectedDataSourceChange}
+            disabled={!this.props.dataSourceEnabled}
+            fullWidth={true}
+          />
+        </EuiFormFieldset>
         <EuiSpacer />
         <EuiFormRow fullWidth>
           <ImportModeControl
             initialValues={importMode}
             isLegacyFile={isLegacyFile}
             updateSelection={(newValues: ImportMode) => this.changeImportMode(newValues)}
+            optionLabel={i18n.translate(
+              'savedObjectsManagement.objectsTable.importModeControl.importOptionsTitle',
+              { defaultMessage: 'Conflict management' }
+            )}
           />
         </EuiFormRow>
-      </EuiForm>
+      </div>
     );
   }
 
-  renderFetchFromRemote() {
+  renderFetchFromRemote(dataSourceEnabled) {
     return (
-      <EuiTitle>Remote cluster</EuiTitle>
-      <DataSourcePicker
-      savedObjectsClient={savedObjects.client}
-      notifications={toasts}
-      onSelectedDataSource={onChange}
-      disabled={!dataSourceEnabled}
-    />
-    <EuiTitle>Select tenant</EuiTitle>
-    )
+      <div>
+        <EuiTitle>Remote cluster</EuiTitle>
+        <ClusterSelector
+          savedObjectsClient={savedObjects.client}
+          notifications={toasts}
+          onSelectedDataSource={onChange}
+          disabled={!dataSourceEnabled}
+          fullWidth={true}
+        />
+        <EuiTitle>Select tenant</EuiTitle>
+      </div>
+    );
   }
 
   renderFooter() {

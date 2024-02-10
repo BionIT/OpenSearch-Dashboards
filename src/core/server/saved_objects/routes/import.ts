@@ -60,7 +60,7 @@ export const registerImportRoute = (router: IRouter, config: SavedObjectConfig) 
           {
             overwrite: schema.boolean({ defaultValue: false }),
             createNewCopies: schema.boolean({ defaultValue: false }),
-            dataSourceId: schema.string({ defaultValue: '' }),
+            dataSourceId: schema.maybe(schema.string({ defaultValue: '' })),
           },
           {
             validate: (object) => {
@@ -77,24 +77,27 @@ export const registerImportRoute = (router: IRouter, config: SavedObjectConfig) 
     },
     router.handleLegacyErrors(async (context, req, res) => {
       const { overwrite, createNewCopies, dataSourceId } = req.query;
-      console.log(dataSourceId)
       const file = req.body.file as FileStream;
       const fileExtension = extname(file.hapi.filename).toLowerCase();
       if (fileExtension !== '.ndjson') {
         return res.badRequest({ body: `Invalid file extension ${fileExtension}` });
       }
 
-      const dataSource = await context.core.savedObjects.client
-        .get('data-source', dataSourceId)
-        .then((response) => {
-          const attributes: any = response?.attributes || {};
-          return {
-            id: response.id,
-            title: attributes.title,
-          };
-        });
+      // get datasource from saved object service
+      // dataSource is '' when there is no dataSource pass in the url
+      const dataSource = dataSourceId
+        ? await context.core.savedObjects.client
+            .get('data-source', dataSourceId)
+            .then((response) => {
+              const attributes: any = response?.attributes || {};
+              return {
+                id: response.id,
+                title: attributes.title,
+              };
+            })
+        : '';
 
-      const dataSourceTitle = dataSource.title;
+      const dataSourceTitle = dataSource ? dataSource.title : '';
 
       let readStream: Readable;
       try {

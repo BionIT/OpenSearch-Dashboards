@@ -111,7 +111,6 @@ export const mountManagementSection = async ({
                   allowedTypes={allowedObjectTypes}
                   setBreadcrumbs={setBreadcrumbs}
                   dataSourceEnabled={dataSourceEnabled}
-                  savedObjects={coreStart.savedObjects}
                 />
               </Suspense>
             </RedirectToHomeIfUnauthorized>

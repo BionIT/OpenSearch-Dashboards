@@ -116,7 +116,6 @@ export interface SavedObjectsTableProps {
   canGoInApp: (obj: SavedObjectWithMetadata) => boolean;
   dateFormat: string;
   dataSourceEnabled: boolean;
-  savedObjects: SavedObjectsStart;
 }
 
 export interface SavedObjectsTableState {
@@ -562,7 +561,8 @@ export class SavedObjectsTable extends Component<SavedObjectsTableProps, SavedOb
         overlays={this.props.overlays}
         search={this.props.search}
         dataSourceEnabled={this.props.dataSourceEnabled}
-        savedObjects={this.props.savedObjects}
+        savedObjects={this.props.savedObjectsClient}
+        notifications={this.props.notifications}
       />
     );
   }

@@ -46,7 +46,7 @@ interface CollectSavedObjectsOptions {
   objectLimit: number;
   filter?: (obj: SavedObject) => boolean;
   supportedTypes: string[];
-  dataSourceId: string;
+  dataSourceId?: string;
 }
 
 export async function collectSavedObjects({
