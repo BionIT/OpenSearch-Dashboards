@@ -51,10 +51,16 @@ import {
   EuiSpacer,
   EuiLink,
   EuiFormFieldset,
+  EuiCheckableCard,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
-import { OverlayStart, HttpStart } from 'src/core/public';
+import {
+  OverlayStart,
+  HttpStart,
+  SavedObjectsClientContract,
+  NotificationsStart,
+} from 'src/core/public';
 import { ClusterSelector } from '../../../../../data_source_management/public';
 import {
   IndexPatternsContract,
@@ -80,12 +86,9 @@ import { FailedImportConflict, RetryDecision } from '../../../lib/resolve_import
 import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
+import { fetchFromRemote } from '../../../lib/fetch_from_remote';
 const CREATE_NEW_COPIES_DEFAULT = true;
 const OVERWRITE_ALL_DEFAULT = true;
-
-const localCluster = i18n.translate('dataSource.localCluster', {
-  defaultMessage: 'Local cluster',
-});
 
 export interface FlyoutProps {
   serviceRegistry: ISavedObjectsManagementServiceRegistry;
@@ -119,6 +122,7 @@ export interface FlyoutState {
   isLegacyFile: boolean;
   status: string;
   selectedDataSourceId: string;
+  fetchFromRemoteChecked: boolean;
 }
 
 interface ConflictingRecord {
@@ -156,6 +160,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       isLegacyFile: false,
       status: 'idle',
       selectedDataSourceId: '',
+      fetchFromRemoteChecked: true,
     };
   }
 
@@ -196,14 +201,28 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
     const { http } = this.props;
     const { file, importMode, selectedDataSourceId } = this.state;
     this.setState({ status: 'loading', error: undefined });
-    //
-    // let reader = new FileReader();
-    // reader.readAsText(file);
-    //
-    // reader.onload = function() {
-    //   console.log(reader.result);  // prints file contents
-    //   console.log(reader.result.length);  // prints file contents
-    // };
+    // Import the file
+    try {
+      const response = await importFile(http, file!, importMode, selectedDataSourceId);
+      this.setState(processImportResponse(response), () => {
+        // Resolve import errors right away if there's no index patterns to match
+        // This will ask about overwriting each object, etc
+        if (this.state.unmatchedReferences?.length === 0) {
+          this.resolveImportErrors();
+        }
+      });
+    } catch (e) {
+      this.setState({
+        status: 'error',
+        error: getErrorMessage(e),
+      });
+      return;
+    }
+  };
+
+  importFromFile = async (file: File) => {
+    const { http } = this.props;
+    const { importMode, selectedDataSourceId } = this.state;
 
     // Import the file
     try {
@@ -479,7 +498,11 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
     this.setState({ status: 'success', importCount });
   };
 
+  // TODO: add tenant options
+  renderTenantOptions = async () => {};
+
   onRemoteFetch = async () => {
+    this.setState({ status: 'loading', error: undefined });
     const { http } = this.props;
     const { selectedDataSourceId } = this.state;
 
@@ -492,10 +515,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       const content = savedObjects.objects;
       const blob = new Blob([content], { type: 'text/plain' });
       const file = new File([blob], 'temp.ndjson', { type: 'application/x-ndjson' });
-      this.setState({
-        file,
-        isLegacyFile: /\.json$/i.test(file.name) || file.type === 'application/json',
-      });
+      this.importFromFile(file);
     } catch (e) {
       this.setState({
         status: 'error',
@@ -790,6 +810,40 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       return this.renderUnmatchedReferences();
     }
 
+    // return this.renderNormal(importMode, isLegacyFile, dataSourceEnabled);
+    return this.renderNeoImport(importMode, isLegacyFile, dataSourceEnabled);
+  }
+
+  renderNeoImport(importMode: ImportMode, isLegacyFile: boolean, dataSourceEnabled: boolean) {
+    const { fetchFromRemoteChecked } = this.state;
+    return (
+      <EuiForm>
+        <EuiFlexGroup>
+          <EuiFlexItem>
+            <EuiCheckableCard
+              id={'fromremote'}
+              label={'Remote'}
+              checked={fetchFromRemoteChecked}
+              onChange={() => this.setState({ ...this.state, fetchFromRemoteChecked: true })}
+            />
+          </EuiFlexItem>
+          <EuiFlexItem>
+            <EuiCheckableCard
+              id={'fileupload'}
+              label={'File'}
+              checked={!fetchFromRemoteChecked}
+              onChange={() => this.setState({ ...this.state, fetchFromRemoteChecked: false })}
+            />
+          </EuiFlexItem>
+        </EuiFlexGroup>
+        {fetchFromRemoteChecked
+          ? this.renderImportControlForDataSource(importMode, isLegacyFile)
+          : this.renderNormal(importMode, isLegacyFile, dataSourceEnabled)}
+      </EuiForm>
+    );
+  }
+
+  renderNormal(importMode: ImportMode, isLegacyFile: boolean, dataSourceEnabled: boolean) {
     return (
       <EuiForm>
         <EuiFormRow
@@ -897,7 +951,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
   }
 
   renderFooter() {
-    const { isLegacyFile, status, selectedDataSourceId } = this.state;
+    const { isLegacyFile, status } = this.state;
     const { done, close } = this.props;
 
     let confirmButton;
@@ -923,6 +977,21 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
           <FormattedMessage
             id="savedObjectsManagement.objectsTable.flyout.importSuccessful.confirmAllChangesButtonLabel"
             defaultMessage="Confirm all changes"
+          />
+        </EuiButton>
+      );
+    } else if (this.state.fetchFromRemoteChecked) {
+      confirmButton = (
+        <EuiButton
+          onClick={this.onRemoteFetch}
+          size="s"
+          fill
+          isLoading={status === 'loading'}
+          data-test-subj="importSavedObjectsImportBtn"
+        >
+          <FormattedMessage
+            id="savedObjectsManagement.objectsTable.flyout.import.confirmButtonLabel"
+            defaultMessage="Import"
           />
         </EuiButton>
       );
