@@ -5,18 +5,17 @@
 
 import { HttpStart, SavedObjectsImportError } from 'opensearch-dashboards/public';
 
-interface FetchFromRemoteResponse {
+interface GetTenantsFromRemoteResponse {
   objects: string;
   errors?: SavedObjectsImportError[];
 }
-export async function fetchFromRemote(
+export async function getTenantsFromRemote(
   http: HttpStart,
   selectedDataSourceId: string,
-  selectedTenant: string,
   dataSourceEnabled: boolean
 ) {
-  const body = JSON.stringify({ dataSourceId: selectedDataSourceId, tenant: selectedTenant });
-  return await http.post<FetchFromRemoteResponse>('/internal/data-source-management/migrate', {
+  const body = JSON.stringify({ dataSourceId: selectedDataSourceId });
+  return await http.post<GetTenantsFromRemoteResponse>('/internal/data-source-management/tenants', {
     body,
     headers: {
       // Important to be undefined, it forces proper headers to be set for FormData

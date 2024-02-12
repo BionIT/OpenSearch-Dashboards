@@ -31,6 +31,7 @@ import { ensureRawRequest } from '../../../../src/core/server/http/router';
 import { createDataSourceError } from './lib/error';
 import { registerTestConnectionRoute } from './routes/test_connection';
 import { registerImportFromRemoteRoute } from './routes/import_from_remote';
+import { registerGetTenantsFromRemoteRoute } from './routes/get_tenants';
 
 export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourcePluginStart> {
   private readonly logger: Logger;
@@ -110,6 +111,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     const router = core.http.createRouter();
     registerTestConnectionRoute(router, dataSourceService, cryptographyServiceSetup);
     registerImportFromRemoteRoute(router, dataSourceService, cryptographyServiceSetup);
+    registerGetTenantsFromRemoteRoute(router, dataSourceService, cryptographyServiceSetup);
 
     return {
       createDataSourceError: (e: any) => createDataSourceError(e),

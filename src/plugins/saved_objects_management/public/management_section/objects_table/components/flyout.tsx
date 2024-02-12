@@ -61,7 +61,7 @@ import {
   SavedObjectsClientContract,
   NotificationsStart,
 } from 'src/core/public';
-import { ClusterSelector } from '../../../../../data_source_management/public';
+import { ClusterSelector, TenantSelector } from '../../../../../data_source_management/public';
 import {
   IndexPatternsContract,
   IIndexPattern,
@@ -87,6 +87,7 @@ import { OverwriteModal } from './overwrite_modal';
 import { ImportModeControl, ImportMode } from './import_mode_control';
 import { ImportSummary } from './import_summary';
 import { fetchFromRemote } from '../../../lib/fetch_from_remote';
+import { getTenantsFromRemote } from '../../../lib/get_tenants';
 const CREATE_NEW_COPIES_DEFAULT = true;
 const OVERWRITE_ALL_DEFAULT = true;
 
@@ -123,6 +124,8 @@ export interface FlyoutState {
   status: string;
   selectedDataSourceId: string;
   fetchFromRemoteChecked: boolean;
+  selectedTenant: string;
+  tenantOptions: string[];
 }
 
 interface ConflictingRecord {
@@ -161,6 +164,8 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
       status: 'idle',
       selectedDataSourceId: '',
       fetchFromRemoteChecked: true,
+      selectedTenant: '',
+      tenantOptions: [],
     };
   }
 
@@ -504,12 +509,13 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
   onRemoteFetch = async () => {
     this.setState({ status: 'loading', error: undefined });
     const { http } = this.props;
-    const { selectedDataSourceId } = this.state;
+    const { selectedDataSourceId, selectedTenant } = this.state;
 
     try {
       const savedObjects = await fetchFromRemote(
         http,
         selectedDataSourceId,
+        selectedTenant,
         this.props.dataSourceEnabled
       );
       const content = savedObjects.objects;
@@ -873,9 +879,27 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
     );
   }
 
-  onSelectedDataSourceChange = (e) => {
+  onSelectedDataSourceChange = async (e) => {
     const dataSourceId = e[0] ? e[0].id : undefined;
-    this.setState({ selectedDataSourceId: dataSourceId });
+    const { http } = this.props;
+
+    try {
+      const tenants = await getTenantsFromRemote(http, dataSourceId, this.props.dataSourceEnabled);
+      const content = tenants.objects;
+      this.setState({ selectedDataSourceId: dataSourceId, tenantOptions: content });
+    } catch (err) {
+      this.setState({
+        status: 'error',
+        error: getErrorMessage(err),
+        loadingMessage: undefined,
+      });
+      return;
+    }
+  };
+
+  onSelectedTenantChange = (e) => {
+    const tenant = e[0] ? e[0].id : undefined;
+    this.setState({ selectedTenant: tenant });
   };
 
   renderImportControl(importMode: ImportMode, isLegacyFile: boolean, dataSourceEnabled: boolean) {
@@ -905,7 +929,7 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
           legend={{
             children: (
               <EuiTitle size="xs">
-                <span>Import options</span>
+                <span>Cluster options</span>
               </EuiTitle>
             ),
           }}
@@ -914,6 +938,24 @@ export class Flyout extends Component<FlyoutProps, FlyoutState> {
             savedObjectsClient={this.props.savedObjects}
             notifications={this.props.notifications.toasts}
             onSelectedDataSource={this.onSelectedDataSourceChange}
+            disabled={!this.props.dataSourceEnabled}
+            fullWidth={true}
+          />
+        </EuiFormFieldset>
+        <EuiSpacer />
+        <EuiFormFieldset
+          legend={{
+            children: (
+              <EuiTitle size="xs">
+                <span>Tenant options</span>
+              </EuiTitle>
+            ),
+          }}
+        >
+          <TenantSelector
+            notifications={this.props.notifications.toasts}
+            onSelectedTenant={this.onSelectedTenantChange}
+            tenantOptions={this.state.tenantOptions}
             disabled={!this.props.dataSourceEnabled}
             fullWidth={true}
           />

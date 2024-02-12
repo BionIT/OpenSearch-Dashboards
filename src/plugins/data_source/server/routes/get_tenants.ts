@@ -5,28 +5,26 @@
 
 import { IRouter } from 'opensearch-dashboards/server';
 import { schema } from '@osd/config-schema';
-import stringify from 'json-stable-stringify';
 import { DataSourceServiceSetup } from '../data_source_service';
 import { CryptographyServiceSetup } from '../cryptography_service';
 import { DataSourceConnector } from './export_from_remote';
 
-export const registerImportFromRemoteRoute = (
+export const registerGetTenantsFromRemoteRoute = (
   router: IRouter,
   dataSourceServiceSetup: DataSourceServiceSetup,
   cryptography: CryptographyServiceSetup
 ) => {
   router.post(
     {
-      path: '/internal/data-source-management/migrate',
+      path: '/internal/data-source-management/tenants',
       validate: {
         body: schema.object({
           dataSourceId: schema.string(),
-          tenant: schema.string(),
         }),
       },
     },
     async (context, request, response) => {
-      const { dataSourceId, tenant } = request.body;
+      const { dataSourceId } = request.body;
       // get datasource from saved object service
       const dataSourceAttr = await context.core.savedObjects.client
         .get('data-source', dataSourceId)
@@ -37,11 +35,9 @@ export const registerImportFromRemoteRoute = (
 
       const connector = new DataSourceConnector(cryptography, dataSourceAttr);
 
-      const types = await connector.getAllowedTypes(tenant);
-      const objs = await connector.exportSavedObjects(types, tenant);
+      const tenants = await connector.getTenants();
       // @ts-ignore
-      const res = objs.map((item) => stringify(item));
-      const data = res.join('\n');
+      const data = Object.keys(tenants);
 
       return response.ok({
         body: {
