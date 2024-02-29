@@ -12,4 +12,5 @@ export function plugin() {
 }
 export { DataSourceManagementPluginStart } from './types';
 export { ClusterSelector } from './components/cluster_selector';
+export { DataSourcePicker } from './components/data_source_picker';
 export { DataSourceManagementPlugin, DataSourceManagementPluginSetup } from './plugin';
