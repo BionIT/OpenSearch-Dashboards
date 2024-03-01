@@ -10,6 +10,7 @@ import { DataSourceConnectionValidator } from './data_source_connection_validato
 import { DataSourceServiceSetup } from '../data_source_service';
 import { CryptographyServiceSetup } from '../cryptography_service';
 import { IAuthenticationMethodRegistery } from '../auth_registry';
+import { CustomApiSchemaRegistry } from '../schema_registry/custom_api_schema_registry';
 
 export const registerTestConnectionRoute = async (
   router: IRouter,
@@ -49,6 +50,7 @@ export const registerTestConnectionRoute = async (
                         schema.literal(SigV4ServiceName.OpenSearchServerless),
                       ]),
                     }),
+                    schema.object({}),
                   ])
                 ),
               })

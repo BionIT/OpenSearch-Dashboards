@@ -42,6 +42,25 @@ describe(`Test connection ${URL}`, () => {
     },
   };
 
+  const dataSourceAttrMissingCredential = {
+    endpoint: 'https://test.com',
+    auth: {
+      type: AuthType.NoAuth,
+      credentials: {},
+    },
+  };
+
+  const dataSourceAttrPartialCredential = {
+    endpoint: 'https://test.com',
+    auth: {
+      type: AuthType.SigV4,
+      credentials: {
+        accessKey: 'testKey',
+        service: 'service',
+      },
+    },
+  };
+
   beforeEach(async () => {
     ({ server, httpSetup, handlerContext } = await setupServer());
     customApiSchemaRegistryPromise = Promise.resolve(customApiSchemaRegistry);
@@ -90,5 +109,27 @@ describe(`Test connection ${URL}`, () => {
         customApiSchemaRegistryPromise,
       })
     );
+  });
+
+  it('no credential with no auth should succeed', async () => {
+    const result = await supertest(httpSetup.server.listener)
+      .post(URL)
+      .send({
+        id: 'testId',
+        dataSourceAttr: dataSourceAttrMissingCredential,
+      })
+      .expect(200);
+    expect(result.body).toEqual({ success: true });
+  });
+
+  it('partial credential with auth should fail', async () => {
+    const result = await supertest(httpSetup.server.listener)
+      .post(URL)
+      .send({
+        id: 'testId',
+        dataSourceAttr: dataSourceAttrPartialCredential,
+      })
+      .expect(400);
+    expect(result.body.error).toEqual('Bad Request');
   });
 });
