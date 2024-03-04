@@ -7,7 +7,7 @@ import React from 'react';
 import { i18n } from '@osd/i18n';
 import { EuiComboBox } from '@elastic/eui';
 import { SavedObjectsClientContract, ToastsStart } from 'opensearch-dashboards/public';
-import { getDataSources } from '../utils';
+import { getDataSourcesWithFields } from '../utils';
 
 export const LocalCluster: ClusterOption = {
   label: i18n.translate('dataSource.localCluster', {
@@ -23,6 +23,10 @@ interface ClusterSelectorProps {
   disabled: boolean;
   hideLocalCluster: boolean;
   fullWidth: boolean;
+  defaultOption?: ClusterOption[];
+  placeholderText?: string;
+  removePrepend?: boolean;
+  filterFn?: (dataSource: any) => boolean;
 }
 
 interface ClusterSelectorState {
@@ -53,12 +57,20 @@ export class ClusterSelector extends React.Component<ClusterSelectorProps, Clust
 
   async componentDidMount() {
     this._isMounted = true;
-    getDataSources(this.props.savedObjectsClient)
+    getDataSourcesWithFields(this.props.savedObjectsClient, ['id', 'title', 'auth.type'])
       .then((fetchedDataSources) => {
         if (fetchedDataSources?.length) {
-          const clusterOptions = fetchedDataSources.map((dataSource) => ({
+          let filteredDataSources = [];
+          if (this.props.filterFn) {
+            filteredDataSources = fetchedDataSources.filter((ds) => this.props.filterFn!(ds));
+          }
+
+          if (filteredDataSources.length === 0) {
+            filteredDataSources = fetchedDataSources;
+          }
+          const clusterOptions = filteredDataSources.map((dataSource) => ({
             id: dataSource.id,
-            label: dataSource.title,
+            label: dataSource.attributes?.title || '',
           }));
 
           if (!this.props.hideLocalCluster) {
@@ -90,21 +102,26 @@ export class ClusterSelector extends React.Component<ClusterSelectorProps, Clust
   }
 
   render() {
+    const placeholderText = this.props.placeholderText || 'Select a data source';
     return (
       <EuiComboBox
         aria-label={i18n.translate('clusterSelectorComboBoxAriaLabel', {
-          defaultMessage: 'Select a data source',
+          defaultMessage: placeholderText,
         })}
         placeholder={i18n.translate('clusterSelectorComboBoxPlaceholder', {
-          defaultMessage: 'Select a data source',
+          defaultMessage: placeholderText,
         })}
         singleSelection={{ asPlainText: true }}
         options={this.state.clusterOptions}
         selectedOptions={this.state.selectedOption}
         onChange={(e) => this.onChange(e)}
-        prepend={i18n.translate('clusterSelectorComboBoxPrepend', {
-          defaultMessage: 'Data source',
-        })}
+        prepend={
+          this.props.removePrepend
+            ? undefined
+            : i18n.translate('clusterSelectorComboBoxPrepend', {
+                defaultMessage: 'Data source',
+              })
+        }
         compressed
         isDisabled={this.props.disabled}
         fullWidth={this.props.fullWidth || false}
