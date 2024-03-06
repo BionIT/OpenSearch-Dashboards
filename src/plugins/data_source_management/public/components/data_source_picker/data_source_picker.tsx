@@ -129,6 +129,7 @@ export class DataSourcePicker extends React.Component<
         })}
         iconType="database"
         size="s"
+        disabled={this.props.disabled ? this.props.disabled : false}
       >
         {/* <EuiIcon type="database" /> */}
         {(this.state.selectedOption &&
