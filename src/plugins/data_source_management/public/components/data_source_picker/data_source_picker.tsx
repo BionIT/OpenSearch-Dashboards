@@ -112,7 +112,10 @@ export class DataSourcePicker extends React.Component<
     this.setState({
       selectedOption: e,
     });
-    this.props.onSelectedDataSource(e);
+    console.log("option is", e)
+    const dataSourceId = e[0] ? e[0].id : undefined;
+    console.log("datasourc id is", dataSourceId)
+    this.props.onSelectedDataSource(dataSourceId);
   }
 
   onSelectedDataSource(options) {
@@ -160,7 +163,7 @@ export class DataSourcePicker extends React.Component<
                 placeholder: 'Search',
               }}
               options={this.state.clusterOptions}
-              onChange={(newOptions) => this.onSelectedDataSource(newOptions)}
+              onChange={(newOptions) => this.onChange(newOptions)}
               singleSelection={true}
             >
               {(list, search) => (
