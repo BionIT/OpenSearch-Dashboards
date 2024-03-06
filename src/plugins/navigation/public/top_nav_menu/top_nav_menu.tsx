@@ -102,7 +102,11 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
     ...searchBarProps
   } = props;
 
-  if ((!config || config.length === 0) && (!showSearchBar || !props.data)) {
+  if (
+    (!config || config.length === 0) &&
+    (!showSearchBar || !props.data) &&
+    !showDataSourcePicker
+  ) {
     return null;
   }
 
@@ -114,7 +118,7 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
   }
 
   function renderMenu(className: string): ReactElement | null {
-    if (!config || config.length === 0) return null;
+    if ((!config || config.length === 0) && !showDataSourcePicker) return null;
     return (
       <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
         {renderItems()}

@@ -123,18 +123,16 @@ export class DataSourcePicker extends React.Component<
   render() {
     const button = (
       <EuiButtonEmpty
-        className="euiButtonIcon--primary"
+        className="euiHeaderLink"
         onClick={this.onClick.bind(this)}
-        data-test-subj="toggleConsoleMenu"
+        data-test-subj="toggleContextMenu"
         aria-label={i18n.translate('console.requestOptionsButtonAriaLabel', {
           defaultMessage: 'some cluster',
         })}
-        iconSide="right"
-        iconType="arrowDown"
-        fullWidth
+        iconType="database"
         size="s"
       >
-        <EuiIcon type="database" />
+        {/* <EuiIcon type="database" /> */}
         {(this.state.selectedOption &&
           this.state.selectedOption.length > 0 &&
           this.state.selectedOption[0].label) ||
