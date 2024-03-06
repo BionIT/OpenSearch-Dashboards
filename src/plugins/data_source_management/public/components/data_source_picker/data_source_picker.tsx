@@ -62,7 +62,7 @@ export class DataSourcePicker extends React.Component<
       selectedOption: this.props.hideLocalCluster ? [] : [LocalCluster],
     };
 
-    this.onSelectedDataSource.bind(this);
+    this.onChange.bind(this);
   }
 
   componentWillUnmount() {
@@ -107,20 +107,15 @@ export class DataSourcePicker extends React.Component<
       });
   }
 
-  onChange(e) {
+  onChange(options) {
     if (!this._isMounted) return;
-    this.setState({
-      selectedOption: e,
-    });
-    console.log("option is", e)
-    const dataSourceId = e[0] ? e[0].id : undefined;
-    console.log("datasourc id is", dataSourceId)
-    this.props.onSelectedDataSource(dataSourceId);
-  }
-
-  onSelectedDataSource(options) {
     const selectedDataSource = options.find(({ checked }) => checked);
-    this.setState({ selectedOption: [selectedDataSource] });
+
+    this.setState({
+      selectedOption: [selectedDataSource],
+    });
+    const dataSourceId = selectedDataSource ? selectedDataSource.id : undefined;
+    this.props.onSelectedDataSource(dataSourceId);
   }
 
   render() {
