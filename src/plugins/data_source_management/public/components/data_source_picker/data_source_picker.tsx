@@ -31,7 +31,7 @@ export const LocalCluster: ClusterOption = {
 interface DataSourcePickerProps {
   savedObjectsClient: SavedObjectsClientContract;
   notifications: ToastsStart;
-  onSelectedDataSource: (clusterOption: ClusterOption[]) => void;
+  onSelectedDataSource: (id: string, label?: string) => void;
   disabled: boolean;
   hideLocalCluster: boolean;
   fullWidth: boolean;
@@ -116,7 +116,8 @@ export class DataSourcePicker extends React.Component<
       selectedOption: [selectedDataSource],
     });
     const dataSourceId = selectedDataSource ? selectedDataSource.id : undefined;
-    this.props.onSelectedDataSource(dataSourceId);
+    const dataSourceLabel = selectedDataSource ? selectedDataSource.label : undefined;
+    this.props.onSelectedDataSource(dataSourceId, dataSourceLabel);
   }
 
   render() {
