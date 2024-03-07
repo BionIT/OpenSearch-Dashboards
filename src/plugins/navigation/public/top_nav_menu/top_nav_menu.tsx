@@ -81,6 +81,8 @@ export type TopNavMenuProps = StatefulSearchBarProps &
     savedObjects?: SavedObjectsClientContract;
     notifications?: NotificationsStart;
     dataSourceCallBackFunc?: any;
+    hideLocalCluster?: boolean;
+    defaultOption?: any[] 
   };
 
 /*
@@ -101,6 +103,8 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
     dataSourceCallBackFunc,
     showDataSourcePicker,
     disableDataSourcePicker,
+    hideLocalCluster,
+    defaultOption,
     ...searchBarProps
   } = props;
 
@@ -141,11 +145,12 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
     return (
       <DataSourcePicker
         fullWidth={false}
-        hideLocalCluster={false}
+        hideLocalCluster={hideLocalCluster || false}
         savedObjectsClient={savedObjects!}
         notifications={notifications!.toasts}
         onSelectedDataSource={dataSourceCallBackFunc}
         disabled={disableDataSourcePicker ? disableDataSourcePicker : false}
+        defaultOption={defaultOption}
       />
     );
   }

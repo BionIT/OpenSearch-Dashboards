@@ -35,6 +35,7 @@ interface DataSourcePickerProps {
   disabled: boolean;
   hideLocalCluster: boolean;
   fullWidth: boolean;
+  defaultOption?: ClusterOption[]
 }
 
 interface DataSourcePickerState {
@@ -58,8 +59,8 @@ export class DataSourcePicker extends React.Component<
 
     this.state = {
       isPopoverOpen: false,
-      clusterOptions: this.props.hideLocalCluster ? [] : [LocalCluster],
-      selectedOption: this.props.hideLocalCluster ? [] : [LocalCluster],
+      clusterOptions: this.props.defaultOption ? this.props.defaultOption : this.props.hideLocalCluster ? [] : [LocalCluster],
+      selectedOption: this.props.defaultOption ? this.props.defaultOption : this.props.hideLocalCluster ? [] : [LocalCluster],
     };
 
     this.onChange.bind(this);
