@@ -22,7 +22,7 @@ export function parseClientOptions(
     node: endpoint,
     ssl: {
       requestCert: true,
-      rejectUnauthorized: true,
+      rejectUnauthorized: config.ssl.rejectUnauthorized,
     },
     plugins: registeredSchema,
   };

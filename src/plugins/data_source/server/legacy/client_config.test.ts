@@ -12,6 +12,9 @@ const config = {
   clientPool: {
     size: 5,
   },
+  ssl: {
+    rejectUnauthorized: true,
+  },
 } as DataSourcePluginConfigType;
 
 describe('parseClientOptions', () => {

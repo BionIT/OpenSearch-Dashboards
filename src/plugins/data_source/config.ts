@@ -50,6 +50,9 @@ export const configSchema = schema.object({
       enabled: schema.boolean({ defaultValue: true }),
     }),
   }),
+  ssl: schema.object({
+    rejectUnauthorized: schema.boolean({ defaultValue: true }),
+  }),
 });
 
 export type DataSourcePluginConfigType = TypeOf<typeof configSchema>;

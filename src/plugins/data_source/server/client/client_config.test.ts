@@ -12,6 +12,9 @@ const config = {
   clientPool: {
     size: 5,
   },
+  ssl: {
+    rejectUnauthorized: false,
+  },
 } as DataSourcePluginConfigType;
 
 describe('parseClientOptions', () => {
@@ -21,7 +24,7 @@ describe('parseClientOptions', () => {
         node: TEST_DATA_SOURCE_ENDPOINT,
         ssl: {
           requestCert: true,
-          rejectUnauthorized: true,
+          rejectUnauthorized: false,
         },
       })
     );

@@ -21,7 +21,7 @@ export function parseClientOptions(
   const configOptions: ConfigOptions = {
     host: endpoint,
     ssl: {
-      rejectUnauthorized: true,
+      rejectUnauthorized: config.ssl.rejectUnauthorized,
     },
     plugins: registeredSchema,
   };

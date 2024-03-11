@@ -36,10 +36,6 @@
 # Set the value of this setting to true to enable plugin application config. By default it is disabled.
 # application_config.enabled: false
 
-# Set the value of this setting to true to enable plugin CSP handler. By default it is disabled.
-# It requires the application config plugin as its dependency.
-# csp_handler.enabled: false
-
 # The default application to load.
 #opensearchDashboards.defaultAppId: "home"
 
@@ -255,7 +251,8 @@
 #data_source.encryption.wrappingKeyName: 'changeme'
 #data_source.encryption.wrappingKeyNamespace: 'changeme'
 #data_source.encryption.wrappingKey: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-
+# Set the ssl configuration for data source client, if true, server automatically reject clients with invalid certificates.
+#data_source.ssl.rejectUnauthorized: true
 #data_source.endpointDeniedIPs: [
 #    '127.0.0.0/8',
 #    '::1/128',
