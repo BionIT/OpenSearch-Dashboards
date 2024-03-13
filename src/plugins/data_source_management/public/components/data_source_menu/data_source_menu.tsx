@@ -18,7 +18,7 @@ import { DataSourceOption } from '../data_source_selector/data_source_selector';
 import { DataSourceAggregatedView } from '../data_source_aggregated_view';
 import { DataSourceView } from '../data_source_view';
 import { FilterItem } from '../data_source_multi_selectable/data_source_multi_selectable';
-import { DataSourceMultiSelector } from '../data_source_multi_selectable/data_source_multi_selectable';
+import { DataSourceMultiSelectable } from '../data_source_multi_selectable/data_source_multi_selectable';
 
 export interface DataSourceMenuProps {
   showDataSourceSelectable?: boolean;
@@ -86,7 +86,7 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     if (!showDataSourceMultiSelectable) return null;
     return (
       <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
-        <DataSourceMultiSelector
+        <DataSourceMultiSelectable
           fullWidth={fullWidth}
           hideLocalCluster={hideLocalCluster || false}
           savedObjectsClient={savedObjects!}
