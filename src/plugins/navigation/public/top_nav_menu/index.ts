@@ -30,6 +30,7 @@
 
 export { createTopNav } from './create_top_nav_menu';
 export { TopNavMenu, TopNavMenuProps } from './top_nav_menu';
+export { TopNavMenuItem } from './top_nav_menu_item';
 export { TopNavMenuData } from './top_nav_menu_data';
 export {
   TopNavMenuExtensionsRegistrySetup,

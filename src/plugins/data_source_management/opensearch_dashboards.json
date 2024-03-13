@@ -3,7 +3,7 @@
   "version": "opensearchDashboards",
   "server": false,
   "ui": true,
-  "requiredPlugins": ["management", "dataSource", "indexPatternManagement"],
+  "requiredPlugins": ["management", "dataSource", "indexPatternManagement", "navigation"],
   "optionalPlugins": [],
   "requiredBundles": ["opensearchDashboardsReact", "dataSource"],
   "extraPublicDirs": ["public/components/utils"]

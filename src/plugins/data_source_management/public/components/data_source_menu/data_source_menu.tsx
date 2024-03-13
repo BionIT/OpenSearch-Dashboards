@@ -19,6 +19,7 @@ import { DataSourceAggregatedView } from '../data_source_aggregated_view';
 import { DataSourceView } from '../data_source_view';
 import { FilterItem } from '../data_source_multi_selectable/data_source_multi_selectable';
 import { DataSourceMultiSelectable } from '../data_source_multi_selectable/data_source_multi_selectable';
+import { TopNavMenuData, TopNavMenuItem } from '../../../../../../src/plugins/navigation/public';
 
 export interface DataSourceMenuProps {
   showDataSourceSelectable?: boolean;
@@ -41,6 +42,8 @@ export interface DataSourceMenuProps {
   filterFn?: (dataSource: any) => boolean;
   displayAllCompatibleDataSources?: boolean;
   dataSourceOptions?: DataSourceOption[];
+  config?: TopNavMenuData[];
+  showTopNavMenuItems?: boolean;
 }
 
 export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null {
@@ -61,21 +64,24 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     activeDatasourceIds,
     displayAllCompatibleDataSources,
     dataSourceOptions,
+    showTopNavMenuItems,
   } = props;
 
   if (
     !showDataSourceSelectable &&
     !showDataSourceView &&
     !showDataSourceAggregatedView &&
-    !showDataSourceMultiSelectable
+    !showDataSourceMultiSelectable &&
+    !showTopNavMenuItems
   ) {
     return null;
   }
 
-  function renderDataSourceView(className: string): ReactElement | null {
+  function renderDataSourceView(className: string, config?: TopNavMenuData[]): ReactElement | null {
     if (!showDataSourceView) return null;
     return (
       <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
+        {config && config.length > 0 && renderItems(config)}
         <DataSourceView
           fullWidth={fullWidth}
           selectedOption={selectedOption && selectedOption.length > 0 ? selectedOption : undefined}
@@ -84,10 +90,21 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     );
   }
 
-  function renderDataSourceMultiSelectable(className: string): ReactElement | null {
+  function renderItems(config: TopNavMenuData[]): ReactElement[] | null {
+    if (!config || config.length === 0) return null;
+    return config.map((menuItem: TopNavMenuData, i: number) => {
+      return <TopNavMenuItem key={`nav-menu-${i}`} {...menuItem} />;
+    });
+  }
+
+  function renderDataSourceMultiSelectable(
+    className: string,
+    config?: TopNavMenuData[]
+  ): ReactElement | null {
     if (!showDataSourceMultiSelectable) return null;
     return (
       <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
+        {config && config.length > 0 && renderItems(config)}
         <DataSourceMultiSelectable
           fullWidth={fullWidth}
           hideLocalCluster={hideLocalCluster || false}
@@ -99,10 +116,14 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     );
   }
 
-  function renderDataSourceSelectable(className: string): ReactElement | null {
+  function renderDataSourceSelectable(
+    className: string,
+    config?: TopNavMenuData[]
+  ): ReactElement | null {
     if (!showDataSourceSelectable) return null;
     return (
       <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
+        {config && config.length > 0 && renderItems(config)}
         <DataSourceSelectable
           fullWidth={fullWidth}
           hideLocalCluster={hideLocalCluster || false}
@@ -118,32 +139,38 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     );
   }
 
-  function renderDataSourceAggregatedView(): ReactElement | null {
+  function renderDataSourceAggregatedView(
+    className: string,
+    config?: TopNavMenuData[]
+  ): ReactElement | null {
     if (!showDataSourceAggregatedView) return null;
     return (
-      <DataSourceAggregatedView
-        fullWidth={fullWidth}
-        hideLocalCluster={hideLocalCluster || false}
-        savedObjectsClient={savedObjects!}
-        notifications={notifications!.toasts}
-        activeDatasourceIds={activeDatasourceIds}
-        filterFn={filterFn}
-        displayAllCompatibleDataSources={displayAllCompatibleDataSources || false}
-      />
+      <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
+        {config && config.length > 0 && renderItems(config)}
+        <DataSourceAggregatedView
+          fullWidth={fullWidth}
+          hideLocalCluster={hideLocalCluster || false}
+          savedObjectsClient={savedObjects!}
+          notifications={notifications!.toasts}
+          activeDatasourceIds={activeDatasourceIds}
+          filterFn={filterFn}
+          displayAllCompatibleDataSources={displayAllCompatibleDataSources || false}
+        />
+      </EuiHeaderLinks>
     );
   }
 
   function renderLayout() {
-    const { setMenuMountPoint } = props;
+    const { setMenuMountPoint, config } = props;
     const menuClassName = classNames('osdTopNavMenu', props.className);
     if (setMenuMountPoint) {
       return (
         <>
           <MountPointPortal setMountPoint={setMenuMountPoint}>
-            {renderDataSourceAggregatedView()}
-            {renderDataSourceSelectable(menuClassName)}
-            {renderDataSourceView(menuClassName)}
-            {renderDataSourceMultiSelectable(menuClassName)}
+            {renderDataSourceAggregatedView(menuClassName, config)}
+            {renderDataSourceSelectable(menuClassName, config)}
+            {renderDataSourceView(menuClassName, config)}
+            {renderDataSourceMultiSelectable(menuClassName, config)}
           </MountPointPortal>
         </>
       );
@@ -168,4 +195,5 @@ DataSourceMenu.defaultProps = {
   showDataSourceView: false,
   hideLocalCluster: false,
   showDataSourceMultiSelectable: false,
+  showTopNavMenuItems: false,
 };
