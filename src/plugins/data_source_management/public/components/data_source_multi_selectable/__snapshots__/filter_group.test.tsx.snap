@@ -1,0 +1,87 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FilterGroup should render normally 1`] = `
+<EuiPopover
+  anchorPosition="downCenter"
+  button={
+    <React.Fragment>
+      <EuiButtonEmpty
+        className="euiHeaderLink"
+        iconType="database"
+        onClick={[Function]}
+        size="s"
+      >
+        Data sources
+      </EuiButtonEmpty>
+      <EuiNotificationBadge
+        color="subdued"
+      >
+        1
+      </EuiNotificationBadge>
+    </React.Fragment>
+  }
+  closePopover={[Function]}
+  display="inlineBlock"
+  hasArrow={true}
+  id="popoverExampleMultiSelect"
+  isOpen={false}
+  ownFocus={true}
+  panelPaddingSize="none"
+>
+  <EuiPopoverTitle
+    paddingSize="s"
+  >
+    <EuiFieldSearch
+      compressed={true}
+      fullWidth={false}
+      incremental={false}
+      isClearable={true}
+      isLoading={false}
+      onSearch={[Function]}
+    />
+  </EuiPopoverTitle>
+  <div
+    className="ouiFilterSelect__items"
+    style={
+      Object {
+        "maxHeight": 400,
+        "overflow": "scroll",
+      }
+    }
+  >
+    <EuiFilterSelectItem
+      checked="on"
+      key="0"
+      onClick={[Function]}
+      showIcons={true}
+      style={
+        Object {
+          "display": undefined,
+          "paddingLeft": undefined,
+        }
+      }
+    >
+      name1
+    </EuiFilterSelectItem>
+  </div>
+  <EuiPopoverFooter>
+    <EuiButtonGroup
+      idSelected="select_all"
+      legend="All toptions selection toggle group"
+      onChange={[Function]}
+      options={
+        Array [
+          Object {
+            "id": "select_all",
+            "label": "Select all",
+          },
+          Object {
+            "id": "deselect_all",
+            "label": "Deselect all",
+          },
+        ]
+      }
+    />
+  </EuiPopoverFooter>
+</EuiPopover>
+`;

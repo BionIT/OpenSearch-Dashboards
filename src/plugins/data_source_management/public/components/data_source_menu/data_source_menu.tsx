@@ -16,16 +16,21 @@ import { MountPointPortal } from '../../../../opensearch_dashboards_react/public
 import { DataSourceSelectable } from './data_source_selectable';
 import { DataSourceOption } from '../data_source_selector/data_source_selector';
 import { DataSourceView } from '../data_source_view';
+import { FilterItem } from '../data_source_multi_selectable/data_source_multi_selectable';
+import { DataSourceMultiSelector } from '../data_source_multi_selectable/data_source_multi_selectable';
 
 export interface DataSourceMenuProps {
   showDataSourceSelectable?: boolean;
   showDataSourceView?: boolean;
+  showDataSourceMultiSelectable?: boolean;
   appName: string;
   savedObjects?: SavedObjectsClientContract;
   notifications?: NotificationsStart;
   fullWidth: boolean;
   hideLocalCluster?: boolean;
   dataSourceCallBackFunc?: (dataSource: DataSourceOption) => void;
+  // TODO: combine with dataSourceCallBackFunc
+  selectedDataSourcesCallBackFunc?: (dataSources: DataSourceOption[] | FilterItem[]) => void;
   disableDataSourceSelectable?: boolean;
   className?: string;
   selectedOption?: DataSourceOption[];
@@ -44,10 +49,12 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     hideLocalCluster,
     selectedOption,
     showDataSourceView,
+    showDataSourceMultiSelectable,
+    selectedDataSourcesCallBackFunc,
     filterFn,
   } = props;
 
-  if (!showDataSourceSelectable && !showDataSourceView) {
+  if (!showDataSourceSelectable && !showDataSourceView && !showDataSourceMultiSelectable) {
     return null;
   }
 
@@ -58,6 +65,21 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
         <DataSourceView
           fullWidth={fullWidth}
           selectedOption={selectedOption && selectedOption.length > 0 ? selectedOption : undefined}
+        />
+      </EuiHeaderLinks>
+    );
+  }
+
+  function renderDataSourceMultiSelectable(className: string): ReactElement | null {
+    if (!showDataSourceMultiSelectable) return null;
+    return (
+      <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
+        <DataSourceMultiSelector
+          fullWidth={fullWidth}
+          hideLocalCluster={hideLocalCluster || false}
+          savedObjectsClient={savedObjects!}
+          notifications={notifications!.toasts}
+          onSelectedDataSources={selectedDataSourcesCallBackFunc!}
         />
       </EuiHeaderLinks>
     );
@@ -90,6 +112,7 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
           <MountPointPortal setMountPoint={setMenuMountPoint}>
             {renderDataSourceSelectable(menuClassName)}
             {renderDataSourceView(menuClassName)}
+            {renderDataSourceMultiSelectable(menuClassName)}
           </MountPointPortal>
         </>
       );
@@ -110,4 +133,5 @@ DataSourceMenu.defaultProps = {
   disableDataSourceSelectable: false,
   showDataSourceView: false,
   showDataSourceSelectable: false,
+  showDataSourceMultiSelectable: false,
 };
