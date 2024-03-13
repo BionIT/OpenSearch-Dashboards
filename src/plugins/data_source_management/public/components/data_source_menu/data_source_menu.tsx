@@ -40,6 +40,7 @@ export interface DataSourceMenuProps {
   setMenuMountPoint?: (menuMount: MountPoint | undefined) => void;
   filterFn?: (dataSource: any) => boolean;
   displayAllCompatibleDataSources?: boolean;
+  dataSourceOptions?: DataSourceOption[];
 }
 
 export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null {
@@ -59,6 +60,7 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     filterFn,
     activeDatasourceIds,
     displayAllCompatibleDataSources,
+    dataSourceOptions,
   } = props;
 
   if (
@@ -110,6 +112,7 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
           disabled={disableDataSourceSelectable || false}
           selectedOption={selectedOption && selectedOption.length > 0 ? selectedOption : undefined}
           filterFn={filterFn}
+          dataSourceOptions={dataSourceOptions}
         />
       </EuiHeaderLinks>
     );
