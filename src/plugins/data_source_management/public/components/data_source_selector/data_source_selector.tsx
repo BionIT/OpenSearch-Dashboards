@@ -28,6 +28,7 @@ export interface DataSourceSelectorProps {
   removePrepend?: boolean;
   filterFn?: (dataSource: any) => boolean;
   compressed?: boolean;
+  dataSourceOptions?: DataSourceOption[];
 }
 
 interface DataSourceSelectorState {
@@ -51,7 +52,9 @@ export class DataSourceSelector extends React.Component<
     super(props);
 
     this.state = {
-      dataSourceOptions: this.props.defaultOption
+      dataSourceOptions: this.props.dataSourceOptions
+        ? this.props.dataSourceOptions
+        : this.props.defaultOption
         ? this.props.defaultOption
         : this.props.hideLocalCluster
         ? []
@@ -70,40 +73,48 @@ export class DataSourceSelector extends React.Component<
 
   async componentDidMount() {
     this._isMounted = true;
-    getDataSourcesWithFields(this.props.savedObjectsClient, ['id', 'title', 'auth.type'])
-      .then((fetchedDataSources) => {
-        if (fetchedDataSources?.length) {
-          let filteredDataSources = [];
-          if (this.props.filterFn) {
-            filteredDataSources = fetchedDataSources.filter((ds) => this.props.filterFn!(ds));
-          }
-
-          if (filteredDataSources.length === 0) {
-            filteredDataSources = fetchedDataSources;
-          }
-          const dataSourceOptions = filteredDataSources.map((dataSource) => ({
-            id: dataSource.id,
-            label: dataSource.attributes?.title || '',
-          }));
-
-          if (!this.props.hideLocalCluster) {
-            dataSourceOptions.unshift(LocalCluster);
-          }
-
-          if (!this._isMounted) return;
-          this.setState({
-            ...this.state,
-            dataSourceOptions,
-          });
-        }
-      })
-      .catch(() => {
-        this.props.notifications.addWarning(
-          i18n.translate('dataSource.fetchDataSourceError', {
-            defaultMessage: 'Unable to fetch existing data sources',
-          })
-        );
+    if (this.props.dataSourceOptions) {
+      if (!this._isMounted) return;
+      this.setState({
+        ...this.state,
+        dataSourceOptions: this.props.dataSourceOptions,
       });
+    } else {
+      getDataSourcesWithFields(this.props.savedObjectsClient, ['id', 'title', 'auth.type'])
+        .then((fetchedDataSources) => {
+          if (fetchedDataSources?.length) {
+            let filteredDataSources = [];
+            if (this.props.filterFn) {
+              filteredDataSources = fetchedDataSources.filter((ds) => this.props.filterFn!(ds));
+            }
+
+            if (filteredDataSources.length === 0) {
+              filteredDataSources = fetchedDataSources;
+            }
+            const dataSourceOptions = filteredDataSources.map((dataSource) => ({
+              id: dataSource.id,
+              label: dataSource.attributes?.title || '',
+            }));
+
+            if (!this.props.hideLocalCluster) {
+              dataSourceOptions.unshift(LocalCluster);
+            }
+
+            if (!this._isMounted) return;
+            this.setState({
+              ...this.state,
+              dataSourceOptions,
+            });
+          }
+        })
+        .catch(() => {
+          this.props.notifications.addWarning(
+            i18n.translate('dataSource.fetchDataSourceError', {
+              defaultMessage: 'Unable to fetch existing data sources',
+            })
+          );
+        });
+    }
   }
 
   onChange(e) {
