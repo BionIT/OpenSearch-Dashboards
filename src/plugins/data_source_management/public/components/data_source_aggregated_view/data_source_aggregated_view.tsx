@@ -31,6 +31,7 @@ interface DataSourceAggregatedViewState {
   selectedOption: DataSourceOption[];
   isPopoverOpen: boolean;
   allDataSourcesIdMap: Map<string, any>;
+  activeDatasourceIds?: string[];
 }
 
 export class DataSourceAggregatedView extends React.Component<
@@ -45,6 +46,7 @@ export class DataSourceAggregatedView extends React.Component<
     this.state = {
       isPopoverOpen: false,
       allDataSourcesIdMap: new Map(),
+      activeDatasourceIds: this.props.activeDatasourceIds,
     };
   }
 
@@ -97,6 +99,14 @@ export class DataSourceAggregatedView extends React.Component<
   }
 
   render() {
+    if (
+      this.props.activeDatasourceIds &&
+      this.state.activeDatasourceIds &&
+      this.props.activeDatasourceIds.length !== this.state.activeDatasourceIds.length
+    ) {
+      this.setState({ ...this.state, activeDatasourceIds: this.props.activeDatasourceIds });
+    }
+
     const button = (
       <EuiButtonIcon
         iconType="iInCircle"
@@ -155,7 +165,7 @@ export class DataSourceAggregatedView extends React.Component<
         <EuiNotificationBadge color={'subdued'}>
           {this.props.displayAllCompatibleDataSources
             ? 'All'
-            : this.props.activeDatasourceIds?.length || 0}
+            : (this.state.activeDatasourceIds && this.state.activeDatasourceIds.length) || 0}
         </EuiNotificationBadge>
         <EuiPopover
           id={'dataSourceSViewContextMenuPopover'}
