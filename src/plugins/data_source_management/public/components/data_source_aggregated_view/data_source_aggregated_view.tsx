@@ -153,7 +153,9 @@ export class DataSourceAggregatedView extends React.Component<
           {'Data sources'}
         </EuiButtonEmpty>
         <EuiNotificationBadge color={'subdued'}>
-          {this.props.activeDatasourceIds?.length || 'All'}
+          {this.props.displayAllCompatibleDataSources
+            ? 'All'
+            : this.props.activeDatasourceIds?.length || 0}
         </EuiNotificationBadge>
         <EuiPopover
           id={'dataSourceSViewContextMenuPopover'}
