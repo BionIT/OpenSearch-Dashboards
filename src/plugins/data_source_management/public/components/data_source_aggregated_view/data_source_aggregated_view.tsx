@@ -46,7 +46,6 @@ export class DataSourceAggregatedView extends React.Component<
     this.state = {
       isPopoverOpen: false,
       allDataSourcesIdMap: new Map(),
-      activeDatasourceIds: this.props.activeDatasourceIds,
     };
   }
 
@@ -157,7 +156,7 @@ export class DataSourceAggregatedView extends React.Component<
         <EuiNotificationBadge color={'subdued'}>
           {this.props.displayAllCompatibleDataSources
             ? 'All'
-            : (this.state.activeDatasourceIds && this.state.activeDatasourceIds.length) || 0}
+            : (this.props.activeDatasourceIds && this.props.activeDatasourceIds.length) || 0}
         </EuiNotificationBadge>
         <EuiPopover
           id={'dataSourceSViewContextMenuPopover'}
