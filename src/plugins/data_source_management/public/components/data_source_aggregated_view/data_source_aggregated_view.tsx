@@ -99,14 +99,6 @@ export class DataSourceAggregatedView extends React.Component<
   }
 
   render() {
-    if (
-      this.props.activeDatasourceIds &&
-      this.state.activeDatasourceIds &&
-      this.props.activeDatasourceIds.length !== this.state.activeDatasourceIds.length
-    ) {
-      this.setState({ ...this.state, activeDatasourceIds: this.props.activeDatasourceIds });
-    }
-
     const button = (
       <EuiButtonIcon
         iconType="iInCircle"
@@ -119,7 +111,7 @@ export class DataSourceAggregatedView extends React.Component<
     let items = [];
 
     // only display active data sources
-    if (this.props.activeDatasourceIds && this.props.activeDatasourceIds.length > 0) {
+    if (this.props.activeDatasourceIds) {
       items = this.props.activeDatasourceIds.map((id) => {
         return {
           name: this.state.allDataSourcesIdMap.get(id),
