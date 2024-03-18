@@ -18,11 +18,13 @@ import { DataSourceSelectable } from './data_source_selectable';
 import { DataSourceOption } from '../data_source_selector/data_source_selector';
 import { DataSourceAggregatedView } from '../data_source_aggregated_view';
 import { DataSourceView } from '../data_source_view';
+import { DataSourceMultiSelectable } from '../data_source_multi_selectable/data_source_multi_selectable';
 import { DataSourceAttributes } from '../../types';
 
 export interface DataSourceMenuProps {
   showDataSourceSelectable?: boolean;
   showDataSourceView?: boolean;
+  showDataSourceMultiSelectable?: boolean;
   showDataSourceAggregatedView?: boolean;
   activeDataSourceIds?: string[];
   appName: string;
@@ -30,7 +32,7 @@ export interface DataSourceMenuProps {
   notifications?: NotificationsStart;
   fullWidth: boolean;
   hideLocalCluster?: boolean;
-  dataSourceCallBackFunc?: (dataSource: DataSourceOption) => void;
+  dataSourceCallBackFunc?: (dataSources: DataSourceOption[]) => void;
   disableDataSourceSelectable?: boolean;
   className?: string;
   selectedOption?: DataSourceOption[];
@@ -51,12 +53,18 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
     hideLocalCluster,
     selectedOption,
     showDataSourceView,
+    showDataSourceMultiSelectable,
     dataSourceFilter,
     activeDataSourceIds,
     displayAllCompatibleDataSources,
   } = props;
 
-  if (!showDataSourceSelectable && !showDataSourceView && !showDataSourceAggregatedView) {
+  if (
+    !showDataSourceSelectable &&
+    !showDataSourceView &&
+    !showDataSourceAggregatedView &&
+    !showDataSourceMultiSelectable
+  ) {
     return null;
   }
 
@@ -67,6 +75,21 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
         <DataSourceView
           fullWidth={fullWidth}
           selectedOption={selectedOption && selectedOption.length > 0 ? selectedOption : undefined}
+        />
+      </EuiHeaderLinks>
+    );
+  }
+
+  function renderDataSourceMultiSelectable(className: string): ReactElement | null {
+    if (!showDataSourceMultiSelectable) return null;
+    return (
+      <EuiHeaderLinks data-test-subj="top-nav" gutterSize="xs" className={className}>
+        <DataSourceMultiSelectable
+          fullWidth={fullWidth}
+          hideLocalCluster={hideLocalCluster || false}
+          savedObjectsClient={savedObjects!}
+          notifications={notifications!.toasts}
+          onSelectedDataSources={dataSourceCallBackFunc!}
         />
       </EuiHeaderLinks>
     );
@@ -115,6 +138,7 @@ export function DataSourceMenu(props: DataSourceMenuProps): ReactElement | null 
             {renderDataSourceAggregatedView()}
             {renderDataSourceSelectable(menuClassName)}
             {renderDataSourceView(menuClassName)}
+            {renderDataSourceMultiSelectable(menuClassName)}
           </MountPointPortal>
         </>
       );
@@ -135,6 +159,7 @@ DataSourceMenu.defaultProps = {
   disableDataSourceSelectable: false,
   showDataSourceAggregatedView: false,
   showDataSourceSelectable: false,
+  showDataSourceMultiSelectable: false,
   displayAllCompatibleDataSources: false,
   showDataSourceView: false,
   hideLocalCluster: false,
