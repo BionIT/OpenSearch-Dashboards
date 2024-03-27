@@ -119,6 +119,7 @@ export class DataSourceSelectable extends React.Component<
 
     this.setState({
       selectedOption: [selectedDataSource],
+      dataSourceOptions: options,
     });
 
     this.props.onSelectedDataSources([selectedDataSource]);
