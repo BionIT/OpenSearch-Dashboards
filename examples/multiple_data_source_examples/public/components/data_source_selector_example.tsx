@@ -130,8 +130,8 @@ export const DataSourceSelectorExample = ({
         notifications={notifications.toasts}
         fullWidth={false}
         onSelectedDataSource={(ds) => setSelectedDataSources(ds)}
+        dataSourceFilter={(ds) => ds.attributes.title !== 'docker'}
         disabled={false}
-        defaultOption={[{id: ''}]}
         hideLocalCluster={true}
       />
     );

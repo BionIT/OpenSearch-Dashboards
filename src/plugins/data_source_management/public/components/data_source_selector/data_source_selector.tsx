@@ -63,37 +63,37 @@ export class DataSourceSelector extends React.Component<
   }
 
   handleSelectedOption(dataSourceOptions: DataSourceOption[], allDataSources: Array<SavedObject<DataSourceAttributes>>, defaultDataSource?: string) {
-    console.log(this.props.defaultOption)
     const [{id, }] = this.props.defaultOption!;
-    switch (id) {
-      case '': 
-        this.setState({
-          ...this.state,
-          dataSourceOptions,
-          selectedOption: [{id: LocalCluster.id, label: LocalCluster.label}],
-          defaultDataSource,
-          allDataSources,
-        });
-        this.props.onSelectedDataSource([LocalCluster]);
-        break;
-      case undefined:
-        this.props.notifications.addWarning(
-          i18n.translate('dataSource.fetchDataSourceError', {
-            defaultMessage: 'Data source id is undefined',
-          })
-        );
-        break;
-      default:
-        if (!dataSourceOptions.find((ds) => ds.id === id)) {
-          this.props.notifications.addWarning(
-            i18n.translate('dataSource.fetchDataSourceError', {
-              defaultMessage: 'Data source with id is not available',
-            })
-          );
-          return;
-        }
-        break;
+    const ds = dataSourceOptions.find((ds) => ds.id === id);
+    //invalid id
+    if (!ds) {
+      //TODO: pass in a valid datasource but filtered out
+      this.props.notifications.addWarning(
+        i18n.translate('dataSource.fetchDataSourceError', {
+          defaultMessage: 'Data source with id is not available',
+        })
+      );
+      this.setState({
+        ...this.state,
+        dataSourceOptions,
+        selectedOption: [],
+        defaultDataSource,
+        allDataSources,
+      });
+      this.props.onSelectedDataSource([]);
+      return;
     }
+    //TODO: setState for valid case
+    this.setState({
+      ...this.state,
+      dataSourceOptions,
+      selectedOption: [{id, label: ds.label}],
+      defaultDataSource,
+      allDataSources,
+    });
+    //good
+    this.props.onSelectedDataSource([{id, label: ds.label}]);
+    
   }
 
   handleDefaultDataSource(dataSourceOptions: DataSourceOption[], allDataSources: Array<SavedObject<DataSourceAttributes>>, defaultDataSource?: string) {
@@ -104,12 +104,13 @@ export class DataSourceSelector extends React.Component<
       this.props.hideLocalCluster,
     );
 
+    //no active option, didnot find valid option
     if (selectedDataSource.length === 0) {
       this.props.notifications.addWarning('No connected data source available.');
+      //TODO: trigger callback to return []
+      this.props.onSelectedDataSource([]);
       return;
     }
-
-    if (!this._isMounted) return;
 
     this.setState({
       ...this.state,
@@ -141,16 +142,23 @@ export class DataSourceSelector extends React.Component<
         }
 
         const defaultDataSource = this.props.uiSettings?.get('defaultDataSource', undefined) ?? undefined;
+        console.log(defaultDataSource);
 
-        //4.1 handle active option 
-        if (this.props.defaultOption) {
+        //4.1 empty default option, [], just want to show placeholder
+        //devtool, add sample, tsvb, search relevance
+        if (this.props.defaultOption?.length === 0) {
+          //don't trigger callback
+          return;
+        }
+
+        //4.2 handle active option, [{}]
+        if (this.props.defaultOption?.length) {
           this.handleSelectedOption(dataSourceOptions, fetchedDataSources, defaultDataSource);
           return;
         }
 
-        //4.2 handle default data source
+        //4.3 handle default data source
         this.handleDefaultDataSource(dataSourceOptions, fetchedDataSources, defaultDataSource);
-
       } catch (err) {
         this.props.notifications.addWarning(
           i18n.translate('dataSource.fetchDataSourceError', {
@@ -183,6 +191,8 @@ export class DataSourceSelector extends React.Component<
     if (!this.props.hideLocalCluster) {
       options.unshift(LocalCluster);
     }
+
+    console.log(this.state.defaultDataSource);
 
     return (
       <EuiComboBox

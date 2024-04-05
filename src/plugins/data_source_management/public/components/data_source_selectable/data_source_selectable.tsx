@@ -80,7 +80,7 @@ export class DataSourceSelectable extends React.Component<
     this.setState({ ...this.state, isPopoverOpen: false });
   }
 
-  handleSelectedOption(dataSourceOptions: DataSourceOption[], defaultDataSource?: string) {
+  handleSelectedOption(dataSourceOptions: DataSourceOption[], defaultDataSource: string|null) {
     const [{id, }] = this.props.selectedOption!;
     switch (id) {
       case '': 
@@ -112,7 +112,7 @@ export class DataSourceSelectable extends React.Component<
     }
   }
 
-  handleDefaultDataSource(dataSourceOptions: DataSourceOption[], defaultDataSource?: string) {
+  handleDefaultDataSource(dataSourceOptions: DataSourceOption[], defaultDataSource: string|null) {
     const selectedDataSource = getDefaultDataSource(
       dataSourceOptions,
       LocalCluster,
@@ -162,7 +162,7 @@ export class DataSourceSelectable extends React.Component<
         dataSourceOptions.unshift(LocalCluster);
       }
 
-      const defaultDataSource = this.props.uiSettings?.get('defaultDataSource', undefined) ?? undefined;
+      const defaultDataSource = this.props.uiSettings?.get('defaultDataSource', null) ?? null;
 
       //4.1 handle active option 
       if (this.props.selectedOption) {
