@@ -98,6 +98,7 @@ export const DataSourceSelectableExample = ({
           fullWidth: false,
           savedObjects: savedObjects.client,
           notifications,
+          activeOption:[{id: ''}],
           onSelectedDataSources: (ds) => {
             setSelectedDataSources(ds);
           },

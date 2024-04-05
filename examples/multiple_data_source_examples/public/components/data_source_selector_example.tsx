@@ -131,6 +131,7 @@ export const DataSourceSelectorExample = ({
         fullWidth={false}
         onSelectedDataSource={(ds) => setSelectedDataSources(ds)}
         disabled={false}
+        defaultOption={[{id: ''}]}
         hideLocalCluster={true}
       />
     );
