@@ -25,6 +25,10 @@ This guide applies to all development within the OpenSearch Dashboards project a
   - [TypeScript/JavaScript](#typescriptjavascript)
   - [React](#react)
   - [API endpoints](#api-endpoints)
+- [Submit pull request](#)
+  - [Beofre submit pull request](#)
+  - [Pull request submit process](#)
+  - [Best practice](#)
 
 > To view these docs and all the readme's in this repository as webpages, visit https://opensearch-project.github.io/OpenSearch-Dashboards/docs/index.html#/
 
@@ -1047,3 +1051,54 @@ POST /api/opensearch-dashboards/index_patterns
   ]
 }
 ```
+
+## Submit pull request
+### Before submit a pull request
+First-time contributors should head to the [contributing guide](https://github.com/opensearch-project/OpenSearch-Dashboards/blob/main/CONTRIBUTING.md) to get started.
+
+Make sure your pull request adheres to our [code guidelines](#code-guidelines). 
+
+#### Test changes locally 
+Follow [testing guideline](https://github.com/opensearch-project/OpenSearch-Dashboards/blob/main/TESTING.md) about current tests in the repo, writing tests and running tests locally.
+
+### The Pull Request Submit Process
+Merging a pull request requires the following steps to be completed before the pull request will be merged automatically.
+
+Open a pull request
+For kubernetes/kubernetes repository only: Add release notes if needed.
+Follow the EasyCLA steps to sign the CLA (prerequisite)
+Pass all e2e tests
+Get all necessary approvals from reviewers and code owners
+
+
+
+#### Pull Requests and the Release Cycle
+If a pull request has been reviewed but held or not approved, it might be due to the current phase in the Release Cycle. Occasionally, a SIG may freeze their own code base when working towards a specific feature or goal that could impact other development. During this time, your pull request could remain unmerged while their release work is completed.
+
+If you feel your pull request is in this state, contact the appropriate SIG or SIG-Release for clarification.
+
+Check the The Testing and Merge Workflow at the end of this document if you're interested in the details on how exactly the automation processes pull requests.
+
+
+#### How the e2e Tests Work
+
+
+#### Why was my pull request closed?
+
+### Best Practices for Faster Reviews
+We deeply appreciate everyone who takes the time to make a contribution. We will review all contributions as quickly as possible. As a best practice, opening an issue and discussing your change before you make it is the best way to smooth the PR process. This will prevent a rejection because someone else is already working on the problem, or because the solution is incompatible with the architectural direction.
+
+In addition, below are a few best practices so your pull request gets reviewed quickly.
+
+#### Marking Unfinished Pull Requests
+It's okay to submit a draft PR if you want to solicit reviews before the implementation of your pull request is complete. To do that, you may add a `WIP` or `[WIP]` prefix to your pull request title and [convert the PR to a draft](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/changing-the-stage-of-a-pull-request#converting-a-pull-request-to-a-draft)
+
+#### Clear title and PR description
+
+#### Small Pull Request Is Better
+Small pull requests get reviewed faster and are more likely to be correct than big ones. Breaking your change into small pull requests while keep in mind that every pull request should be useful on its own.
+
+#### Test
+Contributors submitting pull requests to the codebase are required to ensure that their code changes include appropriate testing coverage. Very few pull requests can touch the code and NOT touch the tests.
+
+If you don't know how to test a feature, please ask! PRs lacking sufficient testing coverage may be subject to delays in review or rejection until adequate tests are provided.
