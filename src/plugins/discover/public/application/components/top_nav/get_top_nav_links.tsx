@@ -6,7 +6,6 @@
 import { i18n } from '@osd/i18n';
 import React from 'react';
 import { DiscoverViewServices } from '../../../build_services';
-import { showOpenSearchPanel } from './show_open_search_panel';
 import { SavedSearch } from '../../../saved_searches';
 import { Adapters } from '../../../../../inspector/public';
 import { TopNavMenuData } from '../../../../../navigation/public';
@@ -16,11 +15,16 @@ import {
   SavedObjectSaveModal,
   showSaveModal,
 } from '../../../../../saved_objects/public';
+import {
+  OpenSearchDashboardsContextProvider,
+  toMountPoint,
+} from '../../../../../opensearch_dashboards_react/public';
 import { DiscoverState, setSavedSearchId } from '../../utils/state_management';
 import { DOC_HIDE_TIME_COLUMN_SETTING, SORT_DEFAULT_ORDER_SETTING } from '../../../../common';
 import { getSortForSearchSource } from '../../view_components/utils/get_sort_for_search_source';
 import { getRootBreadcrumbs } from '../../helpers/breadcrumbs';
 import { syncQueryStateWithUrl } from '../../../../../data/public';
+import { OpenSearchPanel } from './open_search_panel';
 
 export const getTopNavLinks = (
   services: DiscoverViewServices,
@@ -162,11 +166,20 @@ export const getTopNavLinks = (
     }),
     testId: 'discoverOpenButton',
     run: () => {
-      showOpenSearchPanel({
-        makeUrl: (searchId) => `#/view/${encodeURIComponent(searchId)}`,
-        I18nContext: core.i18n.Context,
-        services,
-      });
+      const flyoutSession = services.overlays.openFlyout(
+        toMountPoint(
+          <OpenSearchDashboardsContextProvider services={services}>
+            <OpenSearchPanel
+              onClose={() => {
+                if (flyoutSession) {
+                  flyoutSession.close();
+                }
+              }}
+              makeUrl={(searchId) => `#/view/${encodeURIComponent(searchId)}`}
+            />
+          </OpenSearchDashboardsContextProvider>
+        )
+      );
     },
   };
 
@@ -197,7 +210,7 @@ export const getTopNavLinks = (
           ...sharingData,
           title: savedSearch.title,
         },
-        isDirty: !savedSearch.id || state.isDirty,
+        isDirty: !savedSearch.id || state.isDirty || false,
       });
     },
   };
@@ -278,7 +291,7 @@ const getSharingData = async ({
   const searchSourceInstance = searchSource.createCopy();
   const indexPattern = await searchSourceInstance.getField('index');
 
-  const { searchFields, selectFields } = await getSharingDataFields(
+  const { searchFields } = await getSharingDataFields(
     state.columns,
     services.uiSettings.get(DOC_HIDE_TIME_COLUMN_SETTING),
     indexPattern?.timeFieldName

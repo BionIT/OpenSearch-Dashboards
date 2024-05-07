@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, Fragment } from 'react';
-import { useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { SurrDocType } from './context/api/context';
 import { ActionBar } from './context/components/action_bar/action_bar';
-import { CONTEXT_STEP_SETTING, DOC_HIDE_TIME_COLUMN_SETTING } from '../../../../common';
+import { CONTEXT_STEP_SETTING } from '../../../../common';
 import { DiscoverViewServices } from '../../../build_services';
 import { useOpenSearchDashboards } from '../../../../../opensearch_dashboards_react/public';
 import { LOADING_STATUS } from './context/utils/context_query_state';
@@ -16,6 +15,7 @@ import { DataGridTable } from '../data_grid/data_grid_table';
 import { DocViewFilterFn } from '../../doc_views/doc_views_types';
 import { IndexPattern } from '../../../opensearch_dashboards_services';
 import { AppState } from './context/utils/context_state';
+import { SortOrder } from '../../../saved_searches/types';
 
 export interface Props {
   onAddFilter: DocViewFilterFn;
@@ -73,17 +73,12 @@ export function ContextApp({
     [setAppState]
   );
 
-  const sort = useMemo(() => {
+  const sort: SortOrder[] = useMemo(() => {
     return [[indexPattern.timeFieldName!, SortDirection.desc]];
   }, [indexPattern]);
 
-  const displayTimeColumn = useMemo(
-    () => !uiSettings.get(DOC_HIDE_TIME_COLUMN_SETTING, false) && indexPattern?.isTimeBased(),
-    [indexPattern, uiSettings]
-  );
-
   return (
-    <Fragment>
+    <>
       <ActionBar
         defaultStepSize={defaultStepSize}
         docCount={predecessorCount}
@@ -100,13 +95,12 @@ export function ContextApp({
           indexPattern={indexPattern}
           onAddColumn={() => {}}
           onFilter={onAddFilter}
+          onMoveColumn={() => {}}
           onRemoveColumn={() => {}}
           onSetColumns={() => {}}
           onSort={() => {}}
           sort={sort}
           rows={rows}
-          displayTimeColumn={displayTimeColumn}
-          services={services}
           isToolbarVisible={false}
           isContextView={true}
         />
@@ -120,6 +114,6 @@ export function ContextApp({
         onChangeCount={onChangeCount}
         type={SurrDocType.SUCCESSORS}
       />
-    </Fragment>
+    </>
   );
 }

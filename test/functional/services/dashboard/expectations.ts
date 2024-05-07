@@ -240,6 +240,18 @@ export function DashboardExpectProvider({ getService, getPageObjects }: FtrProvi
       });
     }
 
+    async rowCountFromDefaultDiscoverTable(expectedCount: number) {
+      log.debug(`DashboardExpect.rowCountFromDefaultDiscoverTable(${expectedCount})`);
+      // Rows have no identifiers but we can count using the identifiers of the first cells in each data row
+      await retry.try(async () => {
+        const firstCells = await find.allByCssSelector(
+          'td[data-test-subj="docTableExpandToggleColumn"]',
+          findTimeout
+        );
+        expect(firstCells.length).to.be(expectedCount);
+      });
+    }
+
     async seriesElementCount(expectedCount: number) {
       log.debug(`DashboardExpect.seriesElementCount(${expectedCount})`);
       await retry.try(async () => {

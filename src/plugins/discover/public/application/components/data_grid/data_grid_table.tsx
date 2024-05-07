@@ -3,39 +3,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { EuiDataGrid, EuiDataGridSorting, EuiPanel } from '@elastic/eui';
-import { IndexPattern } from '../../../opensearch_dashboards_services';
-import { fetchTableDataCell } from './data_grid_table_cell_value';
-import { buildDataGridColumns, computeVisibleColumns } from './data_grid_table_columns';
-import { DocViewInspectButton } from './data_grid_table_docview_inspect_button';
+import React, { useState } from 'react';
+import { EuiPanel } from '@elastic/eui';
+import { IndexPattern, getServices } from '../../../opensearch_dashboards_services';
 import { DataGridFlyout } from './data_grid_table_flyout';
 import { DiscoverGridContextProvider } from './data_grid_table_context';
-import { toolbarVisibility } from './constants';
 import { DocViewFilterFn, OpenSearchSearchHit } from '../../doc_views/doc_views_types';
-import { usePagination } from '../utils/use_pagination';
-import { SortOrder } from '../../../saved_searches/types';
 import { buildColumns } from '../../utils/columns';
-import { useOpenSearchDashboards } from '../../../../../opensearch_dashboards_react/public';
-import { DiscoverServices } from '../../../build_services';
-import { SAMPLE_SIZE_SETTING } from '../../../../common';
+import { DefaultDiscoverTable } from '../default_discover_table/default_discover_table';
+import { DataGrid } from './data_grid';
+import { getNewDiscoverSetting } from '../utils/local_storage';
+import { SortOrder } from '../../../saved_searches/types';
 
 export interface DataGridTableProps {
   columns: string[];
   indexPattern: IndexPattern;
   onAddColumn: (column: string) => void;
   onFilter: DocViewFilterFn;
+  onMoveColumn: (colName: string, destination: number) => void;
   onRemoveColumn: (column: string) => void;
-  onSort: (sort: SortOrder[]) => void;
+  hits?: number;
+  onSort: (s: SortOrder[]) => void;
   rows: OpenSearchSearchHit[];
   onSetColumns: (columns: string[]) => void;
   sort: SortOrder[];
-  displayTimeColumn: boolean;
   title?: string;
   description?: string;
   isToolbarVisible?: boolean;
   isContextView?: boolean;
   isLoading?: boolean;
+  showPagination?: boolean;
+  scrollToTop?: () => void;
 }
 
 export const DataGridTable = ({
@@ -43,27 +41,26 @@ export const DataGridTable = ({
   indexPattern,
   onAddColumn,
   onFilter,
+  onMoveColumn,
   onRemoveColumn,
   onSetColumns,
   onSort,
   sort,
+  hits,
   rows,
-  displayTimeColumn,
   title = '',
   description = '',
   isToolbarVisible = true,
   isContextView = false,
   isLoading = false,
+  showPagination,
+  scrollToTop,
 }: DataGridTableProps) => {
-  const { services } = useOpenSearchDashboards<DiscoverServices>();
-
+  const services = getServices();
   const [inspectedHit, setInspectedHit] = useState<OpenSearchSearchHit | undefined>();
-  const rowCount = useMemo(() => (rows ? rows.length : 0), [rows]);
-  const pageSizeLimit = services.uiSettings?.get(SAMPLE_SIZE_SETTING);
-  const pagination = usePagination({ rowCount, pageSizeLimit });
 
   let adjustedColumns = buildColumns(columns);
-  // handle case where the user removes selected filed and leaves only time column
+  // Handle the case where all fields/columns are removed except the time-field one
   if (
     adjustedColumns.length === 1 &&
     indexPattern &&
@@ -72,99 +69,44 @@ export const DataGridTable = ({
     adjustedColumns = [...adjustedColumns, '_source'];
   }
 
-  const includeSourceInColumns = adjustedColumns.includes('_source');
-  const sortingColumns = useMemo(() => sort.map(([id, direction]) => ({ id, direction })), [sort]);
-  const rowHeightsOptions = useMemo(
-    () => ({
-      defaultHeight: {
-        lineCount: adjustedColumns.includes('_source') ? 3 : 1,
-      },
-    }),
-    [adjustedColumns]
+  const newDiscoverEnabled = getNewDiscoverSetting(services.storage);
+
+  const panelContent = newDiscoverEnabled ? (
+    <DataGrid
+      columns={columns}
+      indexPattern={indexPattern}
+      sort={sort}
+      onSort={onSort}
+      rows={rows}
+      onSetColumns={onSetColumns}
+      isToolbarVisible={isToolbarVisible}
+      isContextView={isContextView}
+    />
+  ) : (
+    <DefaultDiscoverTable
+      columns={columns}
+      indexPattern={indexPattern}
+      sort={sort}
+      onSort={onSort}
+      rows={rows}
+      hits={hits}
+      onAddColumn={onAddColumn}
+      onMoveColumn={onMoveColumn}
+      onRemoveColumn={onRemoveColumn}
+      onFilter={onFilter}
+      onClose={() => setInspectedHit(undefined)}
+      showPagination={showPagination}
+      scrollToTop={scrollToTop}
+    />
   );
 
-  const onColumnSort = useCallback(
-    (cols: EuiDataGridSorting['columns']) => {
-      onSort(cols.map(({ id, direction }) => [id, direction]));
+  const tablePanelProps = {
+    paddingSize: 'none' as const,
+    style: {
+      margin: newDiscoverEnabled ? '8px' : '0px',
     },
-    [onSort]
-  );
-
-  const renderCellValue = useMemo(() => fetchTableDataCell(indexPattern, rows), [
-    indexPattern,
-    rows,
-  ]);
-
-  const dataGridTableColumns = useMemo(
-    () =>
-      buildDataGridColumns(
-        adjustedColumns,
-        indexPattern,
-        displayTimeColumn,
-        includeSourceInColumns,
-        isContextView
-      ),
-    [adjustedColumns, indexPattern, displayTimeColumn, includeSourceInColumns, isContextView]
-  );
-
-  const dataGridTableColumnsVisibility = useMemo(
-    () => ({
-      visibleColumns: computeVisibleColumns(
-        adjustedColumns,
-        indexPattern,
-        displayTimeColumn
-      ) as string[],
-      setVisibleColumns: (cols: string[]) => {
-        onSetColumns(cols);
-      },
-    }),
-    [adjustedColumns, indexPattern, displayTimeColumn, onSetColumns]
-  );
-
-  const sorting: EuiDataGridSorting = useMemo(
-    () => ({ columns: sortingColumns, onSort: onColumnSort }),
-    [sortingColumns, onColumnSort]
-  );
-
-  const leadingControlColumns = useMemo(() => {
-    return [
-      {
-        id: 'inspectCollapseColumn',
-        headerCellRender: () => null,
-        rowCellRender: DocViewInspectButton,
-        width: 40,
-      },
-    ];
-  }, []);
-
-  const table = useMemo(
-    () => (
-      <EuiDataGrid
-        aria-labelledby="aria-labelledby"
-        columns={dataGridTableColumns}
-        columnVisibility={dataGridTableColumnsVisibility}
-        leadingControlColumns={leadingControlColumns}
-        data-test-subj="docTable"
-        pagination={pagination}
-        renderCellValue={renderCellValue}
-        rowCount={rowCount}
-        sorting={sorting}
-        toolbarVisibility={isToolbarVisible ? toolbarVisibility : false}
-        rowHeightsOptions={rowHeightsOptions}
-      />
-    ),
-    [
-      dataGridTableColumns,
-      dataGridTableColumnsVisibility,
-      leadingControlColumns,
-      pagination,
-      renderCellValue,
-      rowCount,
-      sorting,
-      isToolbarVisible,
-      rowHeightsOptions,
-    ]
-  );
+    color: 'transparent' as const,
+  };
 
   return (
     <DiscoverGridContextProvider
@@ -182,13 +124,12 @@ export const DataGridTable = ({
         data-title={title}
         data-description={description}
         data-test-subj="discoverTable"
+        className="eui-xScrollWithShadows"
       >
-        <EuiPanel hasBorder={false} hasShadow={false} paddingSize="s" color="transparent">
-          <EuiPanel paddingSize="s" style={{ height: '100%' }}>
-            {table}
-          </EuiPanel>
+        <EuiPanel hasBorder={false} hasShadow={false} {...tablePanelProps}>
+          {panelContent}
         </EuiPanel>
-        {inspectedHit && (
+        {newDiscoverEnabled && inspectedHit && (
           <DataGridFlyout
             indexPattern={indexPattern}
             hit={inspectedHit}

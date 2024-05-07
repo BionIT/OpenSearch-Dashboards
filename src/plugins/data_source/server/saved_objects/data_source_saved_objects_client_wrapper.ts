@@ -4,6 +4,7 @@
  */
 
 import {
+  OpenSearchClient,
   SavedObjectsBulkCreateObject,
   SavedObjectsBulkResponse,
   SavedObjectsBulkUpdateObject,
@@ -25,6 +26,11 @@ import {
 } from '../../common/data_sources';
 import { EncryptionContext, CryptographyServiceSetup } from '../cryptography_service';
 import { isValidURL } from '../util/endpoint_validator';
+import { IAuthenticationMethodRegistry } from '../auth_registry';
+import { DataSourceServiceSetup } from '../data_source_service';
+import { CustomApiSchemaRegistry } from '../schema_registry';
+import { DataSourceConnectionValidator } from '../routes/data_source_connection_validator';
+import { DATA_SOURCE_TITLE_LENGTH_LIMIT } from '../util/constants';
 
 /**
  * Describes the Credential Saved Objects Client Wrapper class,
@@ -138,13 +144,16 @@ export class DataSourceSavedObjectsClientWrapper {
   };
 
   constructor(
+    private dataSourcesService: DataSourceServiceSetup,
     private cryptography: CryptographyServiceSetup,
     private logger: Logger,
+    private authRegistryPromise: Promise<IAuthenticationMethodRegistry>,
+    private customApiSchemaRegistryPromise: Promise<CustomApiSchemaRegistry>,
     private endpointBlockedIps?: string[]
   ) {}
 
   private async validateAndEncryptAttributes<T = unknown>(attributes: T) {
-    this.validateAttributes(attributes);
+    await this.validateAttributes(attributes);
 
     const { endpoint, auth } = attributes;
 
@@ -170,6 +179,9 @@ export class DataSourceSavedObjectsClientWrapper {
           auth: await this.encryptSigV4Credential(auth, { endpoint }),
         };
       default:
+        if (await this.isAuthTypeAvailableInRegistry(auth.type)) {
+          return attributes;
+        }
         throw SavedObjectsErrorHelpers.createBadRequestError(`Invalid auth type: '${auth.type}'`);
     }
   }
@@ -238,32 +250,65 @@ export class DataSourceSavedObjectsClientWrapper {
           return attributes;
         }
       default:
+        if (await this.isAuthTypeAvailableInRegistry(auth.type)) {
+          return attributes;
+        }
         throw SavedObjectsErrorHelpers.createBadRequestError(`Invalid credentials type: '${type}'`);
     }
   }
 
-  private validateAttributes<T = unknown>(attributes: T) {
+  private async validateAttributes<T = unknown>(attributes: T) {
     const { title, endpoint, auth } = attributes;
-    if (!title?.trim?.().length) {
+
+    this.validateTitle(title);
+    await this.validateEndpoint(endpoint, attributes as DataSourceAttributes);
+    await this.validateAuth(auth);
+  }
+
+  private validateTitle(title: string) {
+    if (!title.trim().length) {
       throw SavedObjectsErrorHelpers.createBadRequestError(
         '"title" attribute must be a non-empty string'
       );
     }
 
+    if (title.length > DATA_SOURCE_TITLE_LENGTH_LIMIT) {
+      throw SavedObjectsErrorHelpers.createBadRequestError(
+        `"title" attribute is limited to ${DATA_SOURCE_TITLE_LENGTH_LIMIT} characters`
+      );
+    }
+  }
+
+  private async validateEndpoint(endpoint: string, attributes: DataSourceAttributes) {
     if (!isValidURL(endpoint, this.endpointBlockedIps)) {
       throw SavedObjectsErrorHelpers.createBadRequestError(
         '"endpoint" attribute is not valid or allowed'
       );
     }
+    try {
+      const dataSourceClient: OpenSearchClient = await this.dataSourcesService.getDataSourceClient({
+        savedObjects: {} as any,
+        cryptography: this.cryptography,
+        testClientDataSourceAttr: attributes as DataSourceAttributes,
+        authRegistry: await this.authRegistryPromise,
+        customApiSchemaRegistryPromise: this.customApiSchemaRegistryPromise,
+      });
 
+      const dataSourceValidator = new DataSourceConnectionValidator(dataSourceClient, attributes);
+
+      await dataSourceValidator.validate();
+    } catch (err: any) {
+      throw SavedObjectsErrorHelpers.createBadRequestError(
+        `endpoint is not valid OpenSearch endpoint`
+      );
+    }
+  }
+
+  private async validateAuth<T = unknown>(auth: T) {
     if (!auth) {
       throw SavedObjectsErrorHelpers.createBadRequestError('"auth" attribute is required');
     }
 
-    this.validateAuth(auth);
-  }
-
-  private validateAuth<T = unknown>(auth: T) {
     const { type, credentials } = auth;
 
     if (!type) {
@@ -328,6 +373,9 @@ export class DataSourceSavedObjectsClientWrapper {
         }
         break;
       default:
+        if (await this.isAuthTypeAvailableInRegistry(type)) {
+          break;
+        }
         throw SavedObjectsErrorHelpers.createBadRequestError(`Invalid auth type: '${type}'`);
     }
   }
@@ -396,6 +444,9 @@ export class DataSourceSavedObjectsClientWrapper {
         encryptionContext = accessKeyEncryptionContext;
         break;
       default:
+        if (await this.isAuthTypeAvailableInRegistry(auth.type)) {
+          return attributes;
+        }
         throw SavedObjectsErrorHelpers.createBadRequestError(`Invalid auth type: '${auth.type}'`);
     }
 
@@ -475,5 +526,15 @@ export class DataSourceSavedObjectsClientWrapper {
         service,
       },
     };
+  }
+
+  private async getAuthenticationMethodFromRegistry(type: string) {
+    const authMethod = (await this.authRegistryPromise).getAuthenticationMethod(type);
+    return authMethod;
+  }
+
+  private async isAuthTypeAvailableInRegistry(type: string): Promise<boolean> {
+    const authMethod = await this.getAuthenticationMethodFromRegistry(type);
+    return authMethod !== undefined;
   }
 }
